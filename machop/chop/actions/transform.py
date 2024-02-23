@@ -22,8 +22,11 @@ from chop.tools.get_input import InputGenerator, get_cf_args, get_dummy_input
 from chop.tools.utils import parse_accelerator, to_numpy_if_tensor
 
 from chop.passes.graph.transforms import metadata_value_type_cast_transform_pass
+import pprint
 
 logger = logging.getLogger(__name__)
+
+pp = pprint.PrettyPrinter(indent=4)
 
 
 def pre_transform_load(load_name: str, load_type: str, model: torch.nn.Module):
@@ -66,6 +69,7 @@ def transform(
     if load_name is not None and load_type == "mz":
         graph, _ = load_mase_graph_interface_pass(graph, pass_args=load_name)
     else:
+        print("dummy_in")
         dummy_in = get_dummy_input(
             model_info=model_info,
             data_module=data_module,
@@ -154,15 +158,22 @@ def transform(
                     task=task,
                     which_dataloader="val",
                 )
+                print("pass_config") ; print(pass_config)
                 pass_config["model_name"] = model_name
                 pass_config["input_generator"] = input_generator
                 prune_save_dir = save_dir / "prune"
                 prune_save_dir.mkdir(parents=True, exist_ok=True)
                 graph, _ = PASSES[pass_name](
                     graph,
-                    save_dir=prune_save_dir,
-                    config=pass_config,
+                    #save_dir=prune_save_dir,
+                    pass_config,
                 )
+                graph, sparsity_info = PASSES["add_pruning_metadata"](
+                    graph,
+                    {"dummy_in": dummy_in, "add_value": False}
+                )
+                pp.pprint(sparsity_info)
+
             case "remove_prune_wrappers":
                 # Removes the pruning-related hooks and makes pruning permanent
                 graph, _ = PASSES[pass_name](graph, pass_args=None)
@@ -187,6 +198,7 @@ def transform(
         ), f"Return type of {pass_name} must be MaseGraph, got {type(graph)}"
 
     if save_dir is not None:
+        #import pdb;pdb.set_trace()
         transformed_ckpt = save_dir / "transformed_ckpt"
         transformed_ckpt.mkdir(parents=True, exist_ok=True)
         graph, _ = metadata_value_type_cast_transform_pass(

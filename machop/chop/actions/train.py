@@ -51,6 +51,7 @@ def train(
     load_name,
     load_type,
 ):
+
     if save_path is not None:
         # if save_path is None, the model will not be saved
         if not os.path.isdir(save_path):
@@ -70,6 +71,7 @@ def train(
             lr_monitor_callback,
         ]
         plt_trainer_args["logger"] = visualizer
+        print("visualizer");print(visualizer)
 
     # plugin
     if auto_requeue:
