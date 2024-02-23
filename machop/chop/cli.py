@@ -50,7 +50,7 @@ from tabulate import tabulate
 import torch
 
 from . import models
-from .actions import test, train, transform, search, emit, simulate
+from .actions import test, train, transform, search, emit, simulate, train1
 from .dataset import MaseDataModule, AVAILABLE_DATASETS, get_dataset_info
 from .tools import post_parse_load_config, load_config
 
@@ -249,7 +249,8 @@ class ChopCLI:
             case "transform":
                 run_action_fn = self._run_transform
             case "train":
-                run_action_fn = self._run_train
+                #run_action_fn = self._run_train
+                run_action_fn = self._run_train1
             case "test":
                 run_action_fn = self._run_test
             case "search":
@@ -313,6 +314,37 @@ class ChopCLI:
 
         train(**train_params)
         self.logger.info("Training is completed")
+    
+
+    def _run_train1(self):
+        self.logger.info(f"Training model {self.args.model!r}...")
+        # A configuration is compulsory for self-designed train passes
+        if self.args.config is None:
+            raise ValueError("expected configuration via --config, got None")
+        
+        # Load model from a checkpoint!
+        load_name = None
+        load_types = ["pt", "pl", "mz"]
+        if self.args.load_name is not None and self.args.load_type in load_types:
+            load_name = self.args.load_name
+        
+        train1_params = {
+            "model": self.model,
+            "model_info": self.model_info,
+            "data_module": self.data_module,
+            "dataset_info": self.dataset_info,
+            "task": self.args.task,
+            "config": self.args.config,
+            #"auto_requeue": self.args.auto_requeue,
+            "save_path": os.path.join(self.output_dir_sw, "training1_ckpts"),
+            "visualizer": self.visualizer,
+            "load_name": self.args.load_name,
+            "load_type": self.args.load_type,
+            "accelerator": self.args.accelerator,
+        }
+
+        train1(**train1_params)
+        self.logger.info("Self-designed training is completed")
 
     def _run_test(self):
         self.logger.info(f"Testing model {self.args.model!r}...")
@@ -348,6 +380,7 @@ class ChopCLI:
 
         test(**test_params)
         self.logger.info("Testing is completed")
+
 
     def _run_transform(self):
         # A configuration is compulsory for transformation passes

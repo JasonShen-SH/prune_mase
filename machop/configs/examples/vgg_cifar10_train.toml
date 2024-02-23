@@ -1,0 +1,23 @@
+# basics
+model = "jsc-tiny"
+dataset = "jsc"
+task = "cls"
+load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/transform/transformed_ckpt/state_dict.pt"
+load_type = "pt"
+auto_requeue = "None"
+
+project = "vgg_cifar10_train"
+seed = 42
+log_every_n_steps = 50 
+
+[training]
+max_epochs = 10
+learning_rate = 1e-4
+optimizer = "adam"
+weight_decay = 0
+
+[trainer]
+#refresh_rate = 10
+devices = 1
+accelerator = "cpu"
+

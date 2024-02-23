@@ -262,7 +262,6 @@ def add_common_metadata_analysis_pass(
     :return: return a tuple of a MaseGraph and an empty dict (no additional info to return)
     :rtype: tuple(MaseGraph, Dict)
 
-
     The common metadata of a Mase node in a Mase graph describes the constraints of the
     node for any static analysis or possible transformation. The metadata has a
     tree structure, e.g.

@@ -52,9 +52,28 @@ def l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     :return: a sparsity mask
     :rtype: torch.Tensor
     """
+    #import pdb; pdb.set_trace()
     threshold = torch.quantile(tensor.abs().flatten(), sparsity)
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
+
+
+'''
+def channel_l1_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    # tensor: n(i)*n(i-1)*k*k
+    norms = tensor.norm(p=1, dim=[0, 2, 3])  
+    var = tensor.var(dim=1, unbiased=False)
+
+    # Determine the threshold based on sparsity
+    threshold_norms = torch.quantile(norms, sparsity)
+    threshold_var = torch.quantile(var, sparsity)
+
+    # Generate the mask
+    mask = (norms > threshold).unsqueeze(1).unsqueeze(2).unsqueeze(3)  # Expand the mask to the original tensor shape
+    mask = mask.expand_as(tensor).to(torch.bool).to(tensor.device)
+
+    return mask
+'''
 
 
 def global_weight_l1(tensor: torch.Tensor, info: dict, sparsity: float):

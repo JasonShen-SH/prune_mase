@@ -31,8 +31,13 @@ def load_unwrapped_ckpt(checkpoint: str, model: torch.nn.Module):
     state_dict = torch.load(checkpoint)
     if "state_dict" in state_dict:
         state_dict = state_dict["state_dict"]
+    
+    new_state_dict = {}
+    for key, value in state_dict.items():
+        new_key = key.replace('parametrizations.weight.original', 'weight') 
+        new_state_dict[new_key] = value
 
-    model.load_state_dict(state_dict=state_dict)
+    model.load_state_dict(state_dict=new_state_dict)
     return model
 
 

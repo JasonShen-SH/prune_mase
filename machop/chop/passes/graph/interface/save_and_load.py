@@ -19,7 +19,8 @@ def save_graph_module_ckpt(graph_module: fx.GraphModule, save_path: str) -> None
     :param save_path: the directory for saving
     :type save_path: str
     """
-    torch.save(graph_module, save_path)
+    # torch.save(graph_module, save_path)
+    torch.save(graph_module.state_dict(), save_path)  # Serialization of parametrized modules
 
 
 def save_state_dict_ckpt(graph_module: fx.GraphModule, save_path: str) -> None:

@@ -8,14 +8,18 @@ from .sparse_parameterization import FakeSparseWeight, FakeStructuredSparseWeigh
 
 def prune_with_a_function(info, fn, sparsity):
     return fn(info, sparsity)
+# fn: what pruning function
+# sparsity: to what extent would it prunes
 
 
 def get_weight_rank_fn(c):
     return weight_criteria_map[c["scope"]][c["granularity"]][c["method"]]
+# import function: how to rank the weights' relative importance
 
 
 def get_activation_rank_fn(c):
     return activation_criteria_map[c["scope"]][c["granularity"]][c["method"]]
+# import function: how to rank activations' relative importance
 
 
 def get_weight_hook(name, info, named_info, w_config: dict):
@@ -30,27 +34,39 @@ def get_weight_hook(name, info, named_info, w_config: dict):
 
 def get_activation_hook(name, info, named_info, a_config: dict):
     a_rank_fn = get_activation_rank_fn(a_config)
-    a_sparsity = named_info["activation_sparsity"]
+    a_sparsity = named_info["activation_sparsity"]  # 始终是0.1
 
+    value = named_info["value"]
+    register_parameter_name = "register_forward_pre_hook"
+
+    # a_rank_fn(value, info, a_sparsity)  the mask
+
+    parameterization = FakeSparseWeight(a_rank_fn(value, info, a_sparsity))
+    #return (register_parameter_name, parameterization)
+    
     # register forward hook
     def sparsify_input(module, args):
         if len(args) > 1:
             raise ValueError(
                 f"{module.__class__.__name__} takes more than 1 argument at inference, the current sparsiy_input pre forward hook only allows one!"
             )
+        #import pdb; pdb.set_trace()
         x = args[0]
-        mask = a_rank_fn(x, info, a_sparsity)
+        mask = a_rank_fn(x, info, a_sparsity)   # 问题所在
         module.activation_mask = mask
         # it seems like the output of this can be a non-tuple thing??
         return x * mask
 
     return ("register_forward_pre_hook", sparsify_input)
+    
 
 
 def build_pruning_hooks(info, w_config, a_config):
+    # example of a_config: {'method': 'l1-norm', 'granularity': 'elementwise', 'scope': 'local', 'sparsity': 0.1}
     named_hooks = {}
     for k, v in info.items():
         if v is not None:
+            # for weights
             w_info = {
                 "module_type": v["module_type"],
                 "weight_sparsity": w_config["sparsity"],
@@ -120,9 +136,10 @@ def prune_graph_iterator(graph, config: dict):
     # Setup all pruning-related parameters (incl. basic validation)
     w_config = load_weight_prune_config(config["weight"], graph)
     a_config = load_activation_prune_config(config["activation"], graph)
+    # a_config
 
     # we need to loop twice, the first time is to fetch all necessary information
-    # first sloop
+    # first loop
     info = {}
     for node in graph.fx_graph.nodes:
         # pruning only deals with modules at the moment
@@ -133,6 +150,8 @@ def prune_graph_iterator(graph, config: dict):
 
     # hook building
     hooks = build_pruning_hooks(info, w_config, a_config)
+    # building_pruning_blocks确实是对于一切有weights和activations记录在案的module，都会执行prune；
+    # 但是关键是记录的过程是由fetch_info完成的，fetch_info只对conv2d和linear做prune
 
     # prune in second loop by applying hooks to relevant modules
     for node in graph.fx_graph.nodes:
@@ -150,7 +169,12 @@ def prune_graph_iterator(graph, config: dict):
                     )
                 if node_hooks["a_hook"] is not None:
                     register_fn, hook_fn = node_hooks["a_hook"]
+                    #register_name, parameterization = node_hooks["a_hook"]
+                    # apply activation pruning
                     getattr(graph.modules[node.target], register_fn)(hook_fn)
+                    #torch.nn.utils.parametrize.register_parametrization(
+                    #    graph.modules[node.target], register_name, parameterization
+                    #)
 
     return graph
 
@@ -171,4 +195,7 @@ def prune_transform_pass(graph, pass_args: dict = {}):
     :rtype: tuple
     """
     graph = prune_graph_iterator(graph, pass_args)
+
+    #print(type(graph.model))
+
     return graph, {}

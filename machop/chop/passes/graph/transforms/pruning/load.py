@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # Constants ----------------------------------------------------------------------------
 # Pruneable MASE operators
-# NOTE: We don't do activation pruning for conv1d and linear layers.
+# NOTE: We don't do activation pruning for conv1d and linear layers. 
 PRUNEABLE_OPS = {"conv1d": nn.Conv1d, "conv2d": nn.Conv2d, "linear": nn.Linear}
 
 WEIGHT_PRUNE_METHODS = ["random", "l1-norm"]
@@ -60,8 +60,12 @@ def load(config: dict):
 
 def load_weight_prune_config(config: dict, graph):
     sparsity, scope, granularity = load(config)
+    #print("sparsity");print(sparsity)
+    #print("scope");print(scope)
+    #print("granularity");print(granularity)
 
     method = config.get("method", "random")
+    #print("method") ; print(method)
     # Validate the parameters
     if method not in WEIGHT_PRUNE_METHODS:
         raise ValueError(

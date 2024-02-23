@@ -32,18 +32,22 @@ def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
 
             meta = node.meta["mase"]
             if isinstance(modules[node.target], (torch.nn.Conv2d, torch.nn.Linear)):
+            #if isinstance(modules[node.target], (torch.nn.Conv2d))
+                #import pdb; pdb.set_trace()
                 # parameterizations is a list, we assume we only have one single entry
-                mask = modules[node.target].parametrizations.weight[0].mask
+                mask = modules[node.target].parametrizations.weight[0].mask  # weight_mask
                 weight_sparsity = 1 - float(mask.sum() / mask.numel())
                 meta.parameters["software"]["args"]["weight"][
                     "sparsity"
                 ] = weight_sparsity
 
-                act_mask = modules[node.target].activation_mask
+                act_mask = modules[node.target].activation_mask  # activation
+                #act_mask = modules[node.target].parametrizations.data_in_0[0].mask  # weight_mask
                 act_sparsity = 1 - float(act_mask.sum() / act_mask.numel())
                 meta.parameters["software"]["args"]["data_in_0"][
                     "sparsity"
                 ] = act_sparsity
+                
                 if add_value:
                     meta.parameters["software"]["args"]["weight"]["mask_value"] = mask
                     meta.parameters["software"]["args"]["weight_mask"][
