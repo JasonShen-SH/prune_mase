@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 # NOTE: We don't do activation pruning for conv1d and linear layers. 
 PRUNEABLE_OPS = {"conv1d": nn.Conv1d, "conv2d": nn.Conv2d, "linear": nn.Linear}
 
-WEIGHT_PRUNE_METHODS = ["random", "l1-norm"]
-ACTIVATION_PRUNE_METHODS = ["random", "l1-norm"]
+WEIGHT_PRUNE_METHODS = ["random", "l1-norm", "l2-norm"]
+ACTIVATION_PRUNE_METHODS = ["random", "l1-norm", "l2-norm"]
 
 # A registry of available pruning strategies (i.e. algorithms)
 # PRUNE_METHODS = {
@@ -30,10 +30,12 @@ def load(config: dict):
     scope = config.get("scope", "local")
     granularity = config.get("granularity", "elementwise")
 
-    if granularity not in ["channel", "elementwise"]:
+    # if granularity not in ["channel", "elementwise", "kernelwise", "channelwise"]:
+    if granularity not in ["elementwise", "kernelwise", "channelwise"]:
         raise ValueError(
             "Unsupported pruning granularity {}. Please choose from {}".format(
-                granularity, ["channel", "elementwise"]
+                #granularity, ["channel", "elementwise", "kernelwise", "channelwise"]
+                granularity, ["elementwise", "kernelwise", "channelwise"]
             )
         )
     if scope not in ["local", "global"]:
