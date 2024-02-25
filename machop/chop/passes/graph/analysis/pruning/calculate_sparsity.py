@@ -31,8 +31,8 @@ def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
             result = modules[node.target](*args, **kwargs)
 
             meta = node.meta["mase"]
-            if isinstance(modules[node.target], (torch.nn.Conv2d, torch.nn.Linear)):
-            #if isinstance(modules[node.target], (torch.nn.Conv2d))
+            #if isinstance(modules[node.target], (torch.nn.Conv2d, torch.nn.Linear)):
+            if isinstance(modules[node.target], (torch.nn.Conv2d)):
                 #import pdb; pdb.set_trace()
                 # parameterizations is a list, we assume we only have one single entry
                 mask = modules[node.target].parametrizations.weight[0].mask  # weight_mask
