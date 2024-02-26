@@ -69,7 +69,6 @@ def transform(
     if load_name is not None and load_type == "mz":
         graph, _ = load_mase_graph_interface_pass(graph, pass_args=load_name)
     else:
-        print("dummy_in")
         dummy_in = get_dummy_input(
             model_info=model_info,
             data_module=data_module,
@@ -161,8 +160,9 @@ def transform(
                 print("pass_config") ; print(pass_config)
                 pass_config["model_name"] = model_name
                 pass_config["input_generator"] = input_generator
-                prune_save_dir = save_dir / "prune"
-                prune_save_dir.mkdir(parents=True, exist_ok=True)
+                #prune_save_dir = save_dir / "prune"
+                #prune_save_dir.mkdir(parents=True, exist_ok=True)
+                #prune_save_dir没有任何内容
                 graph, _ = PASSES[pass_name](
                     graph,
                     #save_dir=prune_save_dir,
@@ -204,5 +204,5 @@ def transform(
         graph, _ = metadata_value_type_cast_transform_pass(
             graph, pass_args={"fn": to_numpy_if_tensor}
         )
-        save_mase_graph_interface_pass(graph, pass_args=transformed_ckpt)
+        graph, _ = save_mase_graph_interface_pass(graph, pass_args=transformed_ckpt)
     return graph

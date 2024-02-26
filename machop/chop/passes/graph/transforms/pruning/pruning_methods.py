@@ -39,7 +39,21 @@ def random(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     return mask
 
 
-# lasso
+# from flattened_tensor to threshold
+def handle_large_input_data(flat_tensor: torch.Tensor, sparsity: float):
+    print(f"the input tensor is {flat_tensor.shape} and is divided into small batches")
+    batch_unit = int(1e6)
+    num_batches = (flat_tensor.size(0) + batch_unit - 1) // batch_unit
+    quantiles = []
+    for i in range(num_batches-1):
+        batch = flat_tensor[i*batch_unit:(i+1)*batch_unit]
+        quantiles.append(torch.quantile(batch, sparsity))
+    batch = flat_tensor[(num_batches-1)*batch_unit:]
+    quantiles.append(torch.quantile(batch, sparsity))
+    threshold = torch.mean(torch.tensor(quantiles))
+    return threshold
+
+# precise
 
 
 def l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
@@ -60,17 +74,7 @@ def l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     try:
         threshold = torch.quantile(tensor.abs().flatten(), sparsity)
     except RuntimeError as e:
-        # 因为数据量过大，所以需要分批次处理
-        print("input tensor is divided into small batches")
-        batch_unit = int(1e6)
-        num_batches = (flat_tensor.size(0) + batch_unit - 1) // batch_unit
-        quantiles = []
-        for i in range(num_batches-1):
-            batch = flat_tensor[i*batch_unit:(i+1)*batch_unit]
-            quantiles.append(torch.quantile(batch, sparsity))
-        batch = flat_tensor[(num_batches-1)*batch_unit:]
-        quantiles.append(torch.quantile(batch, sparsity))
-        threshold = torch.mean(torch.tensor(quantiles))
+        threshold = handle_large_input_data(flat_tensor, sparsity)
 
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
