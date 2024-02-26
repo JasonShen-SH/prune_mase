@@ -7,6 +7,7 @@ import torch
 import torch.fx as fx
 from chop.passes.graph.analysis.init_metadata import init_metadata_analysis_pass
 from chop.tools.config_load import convert_none_to_str_na, convert_str_na_to_none
+import pickle
 
 
 logger = logging.getLogger(__name__)
@@ -58,8 +59,11 @@ def save_n_meta_param(node_meta: dict, save_path: str) -> None:
     """
     node_meta = convert_none_to_str_na(node_meta)
 
-    with open(save_path, "w") as f:
-        toml.dump(node_meta, f)
+    import pdb; pdb.set_trace()     # 为什么用toml去dump
+    #with open(save_path, "w") as f:
+    #    toml.dump(node_meta, f)
+    with open(save_path, 'wb') as f:
+        pickle.dump(node_meta, f)
 
 
 def load_n_meta_param(load_path: str) -> dict:
@@ -128,6 +132,7 @@ def save_mase_graph_interface_pass(graph, pass_args: dict = {}):
     Returns:
         MaseGraph: mase_graph
     """
+    #import pdb;pdb.set_trace()
     save_dir = pass_args
     os.makedirs(save_dir, exist_ok=True)
     graph_module_ckpt = os.path.join(save_dir, "graph_module.mz")
