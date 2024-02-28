@@ -17,6 +17,9 @@ class WrapperBase(pl.LightningModule):
         epochs=1,
         optimizer=None,
         dataset_info=None,
+        batch_size=128,
+        # 在这里面，有的参数是有用的，如optimizer和learning_rate,有的参数是无用的，如batch_size；
+        # 所有这些参数全部都只在这个特定文件里有用，即：所有optimizer可以改名为optimizer_new，不会有bug
     ):
         super().__init__()
         self.model = model
@@ -25,6 +28,7 @@ class WrapperBase(pl.LightningModule):
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.epochs = epochs
         self.optimizer = optimizer
+        self.batch_size = batch_size
 
         self.num_classes = dataset_info.num_classes
         if self.num_classes is not None:

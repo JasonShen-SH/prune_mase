@@ -50,7 +50,7 @@ from tabulate import tabulate
 import torch
 
 from . import models
-from .actions import test, train, transform, search, emit, simulate, train1
+from .actions import test, train, transform, search, emit, simulate, train1, prune_and_retrain
 from .dataset import MaseDataModule, AVAILABLE_DATASETS, get_dataset_info
 from .tools import post_parse_load_config, load_config
 
@@ -97,7 +97,7 @@ LOGO = f"""
         https://github.com/DeepWok/mase/wiki
 """
 TASKS = ["classification", "cls", "translation", "tran", "language_modeling", "lm"]
-ACTIONS = ["train", "test", "transform", "search", "emit", "simulate"]
+ACTIONS = ["train", "test", "transform", "search", "emit", "simulate", "prune_and_retrain"] # add one action
 INFO_TYPE = ["all", "model", "dataset"]
 LOAD_TYPE = [
     "pt",  # PyTorch module state dictionary
@@ -259,6 +259,8 @@ class ChopCLI:
                 run_action_fn = self._run_emit
             case "simulate":
                 run_action_fn = self._run_simulate
+            case "prune_and_retrain":
+                run_action_fn = self._run_prune_and_retrain
 
         if run_action_fn is None:
             raise ValueError(f"Unsupported action: {self.args.action}")
@@ -346,6 +348,7 @@ class ChopCLI:
         train1(**train1_params)
         self.logger.info("Self-designed training is completed")
 
+
     def _run_test(self):
         self.logger.info(f"Testing model {self.args.model!r}...")
 
@@ -406,6 +409,38 @@ class ChopCLI:
 
         transform(**transform_params)
         self.logger.info("Transformation is completed")
+
+
+    def _run_prune_and_retrain(self):
+        #import pdb; pdb.set_trace()
+        # prune
+        if self.args.config is None:
+            raise ValueError("expected configuration via --config, got None")
+
+        self.logger.info(f"Preparing for pruning and re-training the model!")
+        self.data_module.prepare_data()
+        self.data_module.setup()
+
+        prune_and_retrain_params = {
+            "model": self.model,
+            "model_info": self.model_info,
+            "model_name": self.args.model,
+            "data_module": self.data_module,
+            "dataset_info": self.dataset_info,
+            "task": self.args.task,
+            "config": self.args.config,
+            "visualizer": self.visualizer,
+            "prune_save_dir": os.path.join(self.output_dir_sw, "prune"),
+            "retrain_save_path": os.path.join(self.output_dir_sw, "training_ckpts"),
+            "load_name": self.args.load_name,
+            "load_type": self.args.load_type,
+            "accelerator": self.args.accelerator,
+        }
+
+        prune_and_retrain(**prune_and_retrain_params)
+        
+        self.logger.info("Pruning and Re-training is completed! Thanks!")
+
 
     def _run_search(self):
         load_name = None

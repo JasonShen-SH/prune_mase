@@ -24,7 +24,7 @@ def load_lightning_ckpt_to_unwrapped_model(checkpoint: str, model: torch.nn.Modu
     return model
 
 
-def load_unwrapped_ckpt(checkpoint: str, model: torch.nn.Module):
+def load_unwrapped_ckpt(mask, checkpoint: str, model: torch.nn.Module):
     """
     Load a PyTorch state dict or checkpoint containing state dict to a PyTorch model.
     """
@@ -32,12 +32,26 @@ def load_unwrapped_ckpt(checkpoint: str, model: torch.nn.Module):
     if "state_dict" in state_dict:
         state_dict = state_dict["state_dict"]
     
+  
+    # import pdb; pdb.set_trace()
+
+    # we have to add mask_keys
+    state_dict['feature_layers.0.parametrizations.weight.0.mask'] = mask[0]
+    state_dict['feature_layers.3.parametrizations.weight.0.mask'] = mask[1]
+    state_dict['feature_layers.7.parametrizations.weight.0.mask'] = mask[2]
+    state_dict['feature_layers.10.parametrizations.weight.0.mask'] = mask[3]
+    state_dict['feature_layers.14.parametrizations.weight.0.mask'] = mask[4]
+    state_dict['feature_layers.17.parametrizations.weight.0.mask'] = mask[5]
+
+    '''
     new_state_dict = {}
     for key, value in state_dict.items():
         new_key = key.replace('parametrizations.weight.original', 'weight') 
         new_state_dict[new_key] = value
+    '''
 
-    model.load_state_dict(state_dict=new_state_dict)
+    model.load_state_dict(state_dict=state_dict)
+    #model.load_state_dict(state_dict=new_state_dict)
     return model
 
 
@@ -52,7 +66,7 @@ def load_graph_module_ckpt(checkpoint: str):
 
 
 def load_model(
-    load_name: str, load_type: str = "mz", model: torch.nn.Module = None
+    mask, load_name: str, load_type: str = "mz", model: torch.nn.Module = None
 ) -> torch.nn.Module | torch.fx.GraphModule:
     """Load a pytorch/lightning/mase checkpoint to a model.
 
@@ -77,7 +91,7 @@ def load_model(
         raise ValueError(f"Unknown extension for 'load_type': {load_type}")
 
     if load_type == "pt":
-        model = load_unwrapped_ckpt(checkpoint=load_name, model=model)
+        model = load_unwrapped_ckpt(mask, checkpoint=load_name, model=model)
         logger.info(f"Loaded pytorch checkpoint from {load_name}")
     elif load_type == "pl":
         if not load_name.endswith(".ckpt"):

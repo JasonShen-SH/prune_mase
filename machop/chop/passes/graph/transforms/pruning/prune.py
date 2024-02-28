@@ -31,6 +31,7 @@ def get_weight_hook(name, info, named_info, w_config: dict):
     parameterization = FakeSparseWeight(w_rank_fn(value, info, w_sparsity)) # [tensor, info, sparsity]
     return (register_parameter_name, parameterization)
 
+
 def get_weight_hook_channel(name, info, named_info, next_named_info, w_config: dict):
     # register parameterization
     w_rank_fn = get_weight_rank_fn(w_config)
@@ -43,6 +44,7 @@ def get_weight_hook_channel(name, info, named_info, next_named_info, w_config: d
     register_parameter_name = "weight"
     parameterization = FakeSparseWeight(w_rank_fn(value, next_value, info, w_sparsity)) # [tensor, next_tensor, info, sparsity]
     return (register_parameter_name, parameterization)
+
 
 def get_activation_hook(name, info, named_info, a_config: dict):
     a_rank_fn = get_activation_rank_fn(a_config)

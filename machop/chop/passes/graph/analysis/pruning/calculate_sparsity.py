@@ -11,6 +11,7 @@ def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
     sparsity_info = {}
     env = {}
 
+    mask_collect = []
     for node in graph.fx_graph.nodes:
         args, kwargs = None, None
         if node.op == "placeholder":
@@ -36,6 +37,7 @@ def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
                 #import pdb; pdb.set_trace()
                 # parameterizations is a list, we assume we only have one single entry
                 mask = modules[node.target].parametrizations.weight[0].mask  # weight_mask
+                #import pdb; pdb.set_trace()
                 weight_sparsity = 1 - float(mask.sum() / mask.numel())
                 meta.parameters["software"]["args"]["weight"][
                     "sparsity"
@@ -57,9 +59,10 @@ def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
                     "weight_sparsity": weight_sparsity,
                     "activation_sparsity": act_sparsity,
                 }
+                mask_collect.append(mask)
 
         env[node.name] = result
-    return graph, sparsity_info
+    return graph, sparsity_info, mask_collect
 
 
 def add_pruning_metadata_analysis_pass(graph, pass_args: dict = {}):
@@ -79,7 +82,7 @@ def add_pruning_metadata_analysis_pass(graph, pass_args: dict = {}):
     :rtype: tuple(MaseGraph, dict)
     """
 
-    graph, sparsity_info = graph_iterator_for_metadata(
+    graph, sparsity_info, mask_collect = graph_iterator_for_metadata(
         graph, pass_args["dummy_in"], pass_args["add_value"]
     )
-    return graph, sparsity_info
+    return graph, sparsity_info, mask_collect

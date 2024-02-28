@@ -49,7 +49,7 @@ def handle_large_input_data(flat_tensor: torch.Tensor, sparsity: float):
         batch = flat_tensor[i*batch_unit:(i+1)*batch_unit]
         quantiles.append(torch.quantile(batch, sparsity))
     batch = flat_tensor[(num_batches-1)*batch_unit:]
-    quantiles.append(torch.quantile(batch, sparsity))
+    quantiles.append(torch.quantile(batch, sparsity))  # 其他的排序方法（分开来）
     threshold = torch.mean(torch.tensor(quantiles))
     return threshold
 
@@ -78,6 +78,8 @@ def l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
 
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
+
+
 
 def l2(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     l2_norms = tensor.pow(2).sqrt()
