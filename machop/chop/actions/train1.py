@@ -114,8 +114,12 @@ def train1(
 
     wrapper_cls = get_model_wrapper(model_info, task)
 
+    load_name = config['load_name']
+    load_type = config['load_type']
+
+    mask=[]
     if load_name is not None:
-        model = load_model(load_name, load_type=load_type, model=model)
+        model = load_model(mask, load_name, load_type=load_type, model=model)
         logger.info(f"'{load_type}' checkpoint loaded before training")
 
     plt_trainer_args['accelerator'] = config['trainer']['accelerator']
@@ -128,6 +132,7 @@ def train1(
         epochs = config['training']['max_epochs'],
         weight_decay = config['training']['weight_decay'],
         optimizer = config['training']['optimizer'],
+        #batch_size = config['training']['batch_size'],
     )
 
     trainer = pl.Trainer(**plt_trainer_args, max_epochs=config['training']['max_epochs'])
@@ -140,12 +145,12 @@ def train1(
     # Save the trained model along with relevant metadata in the training_ckpts folder.
     # NOTE: This is important if the model was previously transformed with architectural
     # changes. The state dictionary that's saved by PyTorch Lightning wouldn't work.
-    if save_path is not None and load_name is not None and load_type == "mz":
+    if save_path is not None and load_name is not None and load_type == "mz":  # load_type="pt"
         graph = MaseGraph(model)
         dummy_input = get_dummy_input(model_info, data_module, task)
         graph = init_metadata_analysis_pass(graph, None)
         graph = add_common_metadata_analysis_pass(graph, dummy_input)
         graph = add_software_metadata_analysis_pass(graph, None)
-        transformed_ckpt = Path(save_path) / "transformed_ckpt"
-        transformed_ckpt.mkdir(parents=True, exist_ok=True)
-        save_mase_graph_interface_pass(graph, pass_args=transformed_ckpt)
+        train_ckpt = Path(save_path) / "train_ckpt"
+        train_ckpt.mkdir(parents=True, exist_ok=True)
+        save_mase_graph_interface_pass(graph, pass_args=train_ckpt)
