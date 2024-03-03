@@ -10,6 +10,8 @@ from pytorch_lightning.plugins.environments import SLURMEnvironment
 
 import pytest
 
+from prune_and_retrain import decode_matrix
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,6 +31,7 @@ def test(
     visualizer,
     load_name,
     load_type,
+    huffman_code_path,
 ):
     if save_path is not None:
         if not os.path.exists(save_path):
@@ -44,9 +47,15 @@ def test(
     plt_trainer_args["plugins"] = plugins
 
     wrapper_cls = get_model_wrapper(model_info, task)
+    if huffman_code_path:
+        with open(huffman_code_path, 'rb') as f:
+            huffman_codes = pickle.load(f)
 
-    if load_name is not None:
-        model = load_model(load_name, load_type=load_type, model=model)
+        model = decode_matrix(encoded_matrix=model, huffman_codes=huffman_codes, original_shape=model.shape)
+
+    else:
+        if load_name is not None:
+            model = load_model(load_name, load_type=load_type, model=model)
     plt_model = wrapper_cls(
         model,
         dataset_info=dataset_info,

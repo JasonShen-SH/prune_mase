@@ -2,6 +2,10 @@ import os
 from copy import deepcopy
 from pathlib import Path
 import logging
+import pickle
+import heapq
+from collections import namedtuple
+import torch
 
 import torch
 from chop.passes.graph import PASSES
@@ -57,6 +61,66 @@ def pre_transform_load(load_name: str, load_type: str, model: torch.nn.Module):
     if load_name is not None and load_type in ["pt", "pl"]:
         model = load_model(load_name=load_name, load_type=load_type, model=model)
     return model
+
+def calculate_frequencies(matrix):
+    unique_values, counts = torch.unique(matrix, return_counts=True)
+    return {value.item(): count.item() for value, count in zip(unique_values, counts)}
+
+def build_huffman_tree(frequencies):
+    priority_queue = [Node(value, freq) for value, freq in frequencies.items()]
+    heapq.heapify(priority_queue)
+
+    while len(priority_queue) > 1:
+        right = heapq.heappop(priority_queue)
+        left = heapq.heappop(priority_queue)
+
+        merged = Node(None, left.freq + right.freq)
+        merged.left = left
+        merged.right = right
+
+        heapq.heappush(priority_queue, merged)
+
+    return merged
+
+def generate_huffman_codes(root):
+    Code = namedtuple('Code', ['value', 'code'])
+    codes = {}
+
+    def generate_codes(node, current_code=''):
+        if node.value is not None:
+            codes[node.value] = Code(node.value, current_code)
+            return
+        if node.left:
+            generate_codes(node.left, current_code + '0')
+        if node.right:
+            generate_codes(node.right, current_code + '1')
+
+    generate_codes(root)
+    max_length = max(len(code) for code in codes.values()) # add 0 to have codes using the same number of bytes
+    for value, code in codes.items():
+        codes[value] = Code(value, code.code.zfill(max_length))
+    return codes
+
+def encode_matrix(matrix, huffman_codes):
+    encoded_matrix = []
+    for row in matrix:
+        encoded_row = [huffman_codes[value.item()].code for value in row.flatten()]
+        encoded_matrix.append(''.join(encoded_row))
+    return encoded_matrix
+
+def decode_matrix(encoded_matrix, huffman_codes, original_shape):
+    decoded_matrix = []
+    reverse_mapping = {code.code: code.value for code in huffman_codes.values()}
+    for row in encoded_matrix:
+        decoded_row = []
+        current_code = ''
+        for bit in row:
+            current_code += bit
+            if current_code in reverse_mapping:
+                decoded_row.append(reverse_mapping[current_code])
+                current_code = ''
+        decoded_matrix.append(decoded_row)
+    return torch.tensor(decoded_matrix).reshape(original_shape)
 
 
 def prune_and_retrain(
@@ -232,6 +296,20 @@ def prune_and_retrain(
         pl_model,
         datamodule=data_module,
     )
+
+    frequencies = calculate_frequencies(pl_model.cpu())
+    huffman_tree = build_huffman_tree(frequencies)
+    huffman_codes = generate_huffman_codes(huffman_tree)
+    encoded_model = encode_matrix(model.cpu(), huffman_codes)
+
+     # Save the encoded model
+    if save_dir is not None:
+        transformed_ckpt = save_dir / "transformed_ckpt"
+        transformed_ckpt.mkdir(parents=True, exist_ok=True)
+        torch.save(encoded_model, transformed_ckpt / "vgg7_encoded.pt")
+
+    with open('huffman_codes.pkl', 'wb') as f:
+        pickle.dump(huffman_codes, f)
     # 训练的目的，不只是为了保存模型，更是为了去看准确率（也就是prune的效果到底有没有）
 
     '''
