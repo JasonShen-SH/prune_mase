@@ -1,5 +1,5 @@
 import torch
-
+import pdb
 
 # Parametrizations
 class FakeSparseWeight(torch.nn.Module):
@@ -19,6 +19,9 @@ class FakeSparseWeight(torch.nn.Module):
 
     def forward(self, x):
         self.mask = self.mask.expand(x.shape)
+        #print("Input shape: ", end="");print(x.shape)
+        #print("mask shape: ",end="");print(self.mask.shape)
+        #pdb.set_trace()
         assert self.mask.shape == x.shape
         #import pdb; pdb.set_trace()
         return self.mask * x

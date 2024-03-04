@@ -9,6 +9,8 @@
 # the threshold. So, at least one value in the mask is always set to False.
 
 import torch
+import torch.nn.utils.prune as prune
+import pdb
 
 """
 These implemntations are for the pruning functional we assume info always have the following form:
@@ -69,7 +71,7 @@ def l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     :return: a sparsity mask
     :rtype: torch.Tensor
     """
-    #import pdb; pdb.set_trace()
+    #pdb.set_trace()
     flat_tensor = tensor.abs().flatten()
     try:
         threshold = torch.quantile(tensor.abs().flatten(), sparsity)
@@ -78,7 +80,6 @@ def l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
 
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
-
 
 
 def l2(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
@@ -95,7 +96,6 @@ def kernel_l1_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch
     threshold = torch.quantile(flattened_l1_norms, sparsity)  
     mask = tensor.abs().sum(dim=(2, 3), keepdim=True) > threshold
     return mask
-
 
 # 目前只对conv2d做channelwise的prune
 def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
@@ -121,8 +121,11 @@ def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dic
 
 def global_weight_l1(tensor: torch.Tensor, info: dict, sparsity: float):
     tensors = [v["weight_value"] for _, v in info.items() if v is not None]
-    flattened_tensors = [t.abs().flatten() for t in tensors]
-    threshold = torch.quantile(torch.cat(flattened_tensors, dim=0), sparsity)
+    flattened_tensors = tensors.abs().flatten()
+    try:
+        threshold = torch.quantile(tensor.abs().flatten(), sparsity)
+    except RuntimeError as e:
+        threshold = handle_large_input_data(flattened_tensors, sparsity)
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
 
@@ -135,8 +138,13 @@ def global_weight_l2(tensor: torch.Tensor, info: dict, sparsity: float):
 
 def global_activation_l1(tensor: torch.Tensor, info: dict, sparsity: float):
     tensors = [v["activation_value"] for _, v in info.items() if v is not None]
-    flattened_tensors = [t.abs().flatten() for t in tensors]
-    threshold = torch.quantile(torch.cat(flattened_tensors, dim=0), sparsity)
+    pdb.set_trace()
+    # 需要修改，似乎L1只能够用于channel_pruning，因为activation本身是（通过观察神经元输出）来选择神经元的
+    flattened_tensors = tensors.abs().flatten()
+    try:
+        threshold = torch.quantile(tensor.abs().flatten(), sparsity)
+    except RuntimeError as e:
+        threshold = handle_large_input_data(flattened_tensors, sparsity)
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
 

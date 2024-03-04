@@ -431,7 +431,7 @@ class ChopCLI:
             "config": self.args.config,
             "visualizer": self.visualizer,
             "prune_save_dir": os.path.join(self.output_dir_sw, "prune"),
-            "retrain_save_path": os.path.join(self.output_dir_sw, "training_ckpts"),
+            "retrain_save_path": os.path.join(self.output_dir_sw, "training_ckpts_test"),
             "load_name": self.args.load_name,
             "load_type": self.args.load_type,
             "accelerator": self.args.accelerator,

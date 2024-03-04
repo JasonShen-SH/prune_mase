@@ -44,18 +44,23 @@ from chop.tools.utils import parse_accelerator, to_numpy_if_tensor
 
 from chop.passes.graph.transforms import metadata_value_type_cast_transform_pass
 import pprint
+import pdb
 
 import gc
 gc.collect()
+
+import torch.nn.utils.prune as prune
+
+global act_masks
+act_masks = None
 
 logger = logging.getLogger(__name__)
 
 pp = pprint.PrettyPrinter(indent=4)
 
-
-def pre_transform_load(load_name: str, load_type: str, model: torch.nn.Module):
+def pre_transform_load(mask, load_name: str, load_type: str, model: torch.nn.Module):
     if load_name is not None and load_type in ["pt", "pl"]:
-        model = load_model(load_name=load_name, load_type=load_type, model=model)
+        model = load_model(mask, load_name=load_name, load_type=load_type, model=model)
     return model
 
 
@@ -76,8 +81,12 @@ def prune_and_retrain(
 ):
     accelerator = parse_accelerator(accelerator)
     config = load_config(config)
-
-    model = pre_transform_load(load_name=load_name, load_type=load_type, model=model)
+    #pdb.set_trace()
+    load_name = config['retrain']['load_name']
+    load_type = config['retrain']['load_type']
+    
+    mask=None
+    model = pre_transform_load(mask, load_name=load_name, load_type=load_type, model=model)
     model.to(accelerator)
     
     save_dir = prune_save_dir
@@ -93,6 +102,7 @@ def prune_and_retrain(
     graph = MaseGraph(model=model, cf_args=cf_args)
     # graph_metadata = Mase
     graph, _ = init_metadata_analysis_pass(graph, pass_args=None)
+
     # logger.info(f"graph: {graph.fx_graph}")
 
     # create or load metadata.parameters and mase_graph.model
@@ -118,16 +128,6 @@ def prune_and_retrain(
         pass_name: str
         pass_config: dict
         match pass_name:
-            case "quantize":
-                pass_save_dir = save_dir / "quantize"
-                graph, _ = metadata_value_type_cast_transform_pass(
-                    graph, pass_args={"fn": to_numpy_if_tensor}
-                )
-                ori_graph = deepcopy_mase_graph(graph)
-                graph, _ = PASSES["quantize"](graph, pass_args=pass_config)
-                PASSES["summarize_quantization"](
-                    ori_graph, graph, save_dir=pass_save_dir
-                )
             case "prune":
                 # NOTE: The input generator is only used for when the user wants to
                 # enforce or observe activation sparsity. Otherwise, it's ignored.
@@ -140,22 +140,36 @@ def prune_and_retrain(
                     task=task,
                     which_dataloader="val",
                 )
-                print("pass_config") ; print(pass_config)
+                print("pass_config: ") ; print(pass_config)
                 pass_config["model_name"] = model_name
                 pass_config["input_generator"] = input_generator
                 #prune_save_dir = save_dir / "prune"
                 #prune_save_dir.mkdir(parents=True, exist_ok=True)
                 #prune_save_dir没有任何内容
+                batch_size = config['retrain']['training']['batch_size']
                 graph, _ = PASSES[pass_name](
                     graph,
-                    #save_dir=prune_save_dir,
+                    batch_size, # self_added
                     pass_config,
                 )
-                graph, sparsity_info, mask_collect = PASSES["add_pruning_metadata"](
+                graph, sparsity_info, mask_collect, act_masks = PASSES["add_pruning_metadata"](
                     graph,
                     {"dummy_in": dummy_in, "add_value": False}
                 )
+                torch.save(act_masks, "/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks.pth")
+                #pdb.set_trace()
                 pp.pprint(sparsity_info)
+
+            case "quantize":
+                pdb.set_trace()
+                gc.collect()
+                pass_save_dir = save_dir / "quantize"
+                graph, _ = metadata_value_type_cast_transform_pass(graph, pass_args={"fn": to_numpy_if_tensor})
+                ori_graph = deepcopy_mase_graph(graph)
+                #ori_graph = deepcopy(graph)
+                graph, _ = PASSES["quantize"](graph, pass_args=pass_config)
+                PASSES["summarize_quantization"](ori_graph, graph, save_dir=pass_save_dir)
+
             case "remove_prune_wrappers":
                 # Removes the pruning-related hooks and makes pruning permanent
                 graph, _ = PASSES[pass_name](graph, pass_args=None)
@@ -205,13 +219,15 @@ def prune_and_retrain(
 
     wrapper_cls = get_model_wrapper(model_info, task)
 
-    load_name = config['retrain']['load_name']
-    load_type = config['retrain']['load_type']
+    load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
+    load_type = "pt"
     #import pdb; pdb.set_trace()
 
     if load_name is not None:
         model = load_model(mask_collect, load_name, load_type=load_type, model=model)
+        #model = load_model(load_name, load_type=load_type, model=model)
         logger.info(f"'{load_type}' checkpoint loaded before training")
+
 
     plt_trainer_args['accelerator'] = config['retrain']['trainer']['accelerator']
     plt_trainer_args['devices'] = config['retrain']['trainer']['devices']

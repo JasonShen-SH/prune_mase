@@ -1,6 +1,6 @@
 import torch
 from chop.passes.graph.analysis.utils import fetch_attr, load_arg
-
+import pdb
 
 def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
     """
@@ -11,7 +11,8 @@ def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
     sparsity_info = {}
     env = {}
 
-    mask_collect = []
+    weight_masks = []
+    act_masks = []
     for node in graph.fx_graph.nodes:
         args, kwargs = None, None
         if node.op == "placeholder":
@@ -51,18 +52,21 @@ def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
                 ] = act_sparsity
                 
                 if add_value:
-                    meta.parameters["software"]["args"]["weight"]["mask_value"] = mask
+                    # meta.parameters["software"]["args"]["weight"]["mask_value"] = mask
                     meta.parameters["software"]["args"]["weight_mask"][
                         "value"
                     ] = act_mask
+                #pdb.set_trace()
                 sparsity_info[node.target] = {
                     "weight_sparsity": weight_sparsity,
                     "activation_sparsity": act_sparsity,
                 }
-                mask_collect.append(mask)
+
+                weight_masks.append(mask)
+                act_masks.append(act_mask)
 
         env[node.name] = result
-    return graph, sparsity_info, mask_collect
+    return graph, sparsity_info, weight_masks, act_masks
 
 
 def add_pruning_metadata_analysis_pass(graph, pass_args: dict = {}):
@@ -82,7 +86,7 @@ def add_pruning_metadata_analysis_pass(graph, pass_args: dict = {}):
     :rtype: tuple(MaseGraph, dict)
     """
 
-    graph, sparsity_info, mask_collect = graph_iterator_for_metadata(
+    graph, sparsity_info, weight_masks, act_masks = graph_iterator_for_metadata(
         graph, pass_args["dummy_in"], pass_args["add_value"]
     )
-    return graph, sparsity_info, mask_collect
+    return graph, sparsity_info, weight_masks, act_masks

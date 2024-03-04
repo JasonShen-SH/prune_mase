@@ -13,7 +13,7 @@ from ...utils import (
     match_a_pattern,
     get_node_target_by_name,
 )
-
+import pdb
 from .modify import create_new_fn, create_new_module
 from .quant_parsers import parse_node_config, relink_node_meta, update_quant_meta_param
 from .summary import graph_iterator_compare_nodes, graph_iterator_node_histogram
@@ -58,6 +58,7 @@ def graph_iterator_quantize_by_type(graph, config: dict):
     else:
         bl_graph = None
     for node in graph.fx_graph.nodes:
+        #pdb.set_trace()
         if get_mase_op(node) not in QUANTIZEABLE_OP:
             continue
         node_config = get_config(config, get_mase_op(node))
@@ -67,9 +68,8 @@ def graph_iterator_quantize_by_type(graph, config: dict):
         # if get_mase_type(node) == "module":
         if node.op == "call_module":
             ori_module = get_node_actual_target(node)
-            successor_module = get_similar_node_actual_target(
-                bl_graph, node.next
-            )  # Certain modules will require information about their successor module to complete the initialization process. (For LogicNets, activation functions are needed.)
+            successor_module = get_similar_node_actual_target(bl_graph, node.next)
+            # Certain modules will require information about their successor module to complete the initialization process. (For LogicNets, activation functions are needed.)
             bl_module = get_similar_node_actual_target(bl_graph, node)
             new_module = create_new_module(
                 get_mase_op(node),
@@ -79,6 +79,7 @@ def graph_iterator_quantize_by_type(graph, config: dict):
                 bl_module,
                 successor_module,
             )
+           # new_module = create_new_module(get_mase_op(node),ori_module,node_config,node.meta,bl_module,successor_module)
             parent_name, name = get_parent_name(node.target)
             setattr(graph.modules[parent_name], name, new_module)
             # update precision and type in meta.parameters["common"]
