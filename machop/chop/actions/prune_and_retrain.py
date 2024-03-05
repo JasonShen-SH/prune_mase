@@ -157,11 +157,13 @@ def prune_and_retrain(
                     {"dummy_in": dummy_in, "add_value": False}
                 )
                 torch.save(act_masks, "/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks.pth")
+                print("activation mask saved")
                 #pdb.set_trace()
                 pp.pprint(sparsity_info)
+                del act_masks
 
             case "quantize":
-                pdb.set_trace()
+                #pdb.set_trace()
                 gc.collect()
                 pass_save_dir = save_dir / "quantize"
                 graph, _ = metadata_value_type_cast_transform_pass(graph, pass_args={"fn": to_numpy_if_tensor})
@@ -191,6 +193,33 @@ def prune_and_retrain(
     ###############################
     #re-train
     ###############################
+        
+    from pytorch_lightning.callbacks import Callback
+
+    class HessianComputationCallback(Callback):
+        def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+            # 这里仅作为示例，只选择第一个权重参数来计算 Hessian 的对角线
+            loss = outputs['loss']
+            named_parameters = list(pl_module.named_parameters())
+            name, param = named_parameters[1]
+            pdb.set_trace()
+            if 'weight' in name:
+                hessian_diag = self.compute_hessian_diag(param, pl_module, loss)
+                # 打印 Hessian 对角线的统计摘要
+                print(f"[Batch {batch_idx}] Hessian Diagonal for {name}: max={hessian_diag.max().item()}, min={hessian_diag.min().item()}, mean={hessian_diag.mean().item()}")
+        @staticmethod
+        def compute_hessian_diag(param, model, loss):
+            model.eval()
+            first_order_grads = torch.autograd.grad(loss, param, create_graph=True, allow_unused=True)
+
+            hessian_diag = []
+            for grad in first_order_grads:
+                if grad is not None:
+                    grad_grad = torch.autograd.grad(grad, param, retain_graph=True)[0]
+                    hessian_diag.append(grad_grad)
+
+            hessian_diag = torch.stack(hessian_diag).view_as(param)
+            return hessian_diag
 
     plt_trainer_args={}
     if retrain_save_path is not None:
@@ -205,10 +234,11 @@ def prune_and_retrain(
             dirpath=retrain_save_path,
             save_last=True,
         )
-        
+        hessian_callback = HessianComputationCallback()
         lr_monitor_callback = LearningRateMonitor(logging_interval="step")
         plt_trainer_args["callbacks"] = [
             checkpoint_callback,
+            #hessian_callback,
             lr_monitor_callback,
         ]
         plt_trainer_args["logger"] = visualizer

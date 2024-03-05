@@ -10,6 +10,11 @@ try:
 except:
     pass
 
+global has_finished_prune
+has_finished_prune = False
+global prune_count
+prune_count = 0
+
 def prune_with_a_function(info, fn, sparsity):
     return fn(info, sparsity)
 # fn: what pruning function
@@ -61,6 +66,8 @@ def get_activation_hook(name, info, named_info, batch_size, a_config: dict):
 
     value = named_info["value"]
     register_parameter_name = "register_forward_pre_hook"
+    global has_finished_prune
+    global prune_count
 
     # a_rank_fn(value, info, a_sparsity)  the mask
 
@@ -69,6 +76,8 @@ def get_activation_hook(name, info, named_info, batch_size, a_config: dict):
     
     # register forward hook
     def sparsify_input(module, args):
+        global has_finished_prune
+        global prune_count
         if len(args) > 1:
             raise ValueError(
                 f"{module.__class__.__name__} takes more than 1 argument at inference, the current sparsiy_input pre forward hook only allows one!"
@@ -76,25 +85,34 @@ def get_activation_hook(name, info, named_info, batch_size, a_config: dict):
         x = args[0]
         mask = a_rank_fn(x, info, a_sparsity)   # 问题所在
         module.activation_mask = mask
-        #pdb.set_trace()
-        try:
-            act_masks = torch.load("/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks.pth")
-            if x.shape == (batch_size, 3, 32, 32):
-                mask = act_masks[0]
-            elif x.shape == (batch_size,128,32,32):
-                mask = act_masks[1]
-            elif x.shape == (batch_size,128,16,16):
-                mask = act_masks[2]
-            elif x.shape == (batch_size,256,16,16):
-                mask = act_masks[3]
-            elif x.shape == (batch_size,256,8,8):
-                mask = act_masks[4]
-            elif x.shape == (batch_size,512,8,8):
-                mask = act_masks[5]
-            else:
-                pass   
-        except:
-            pass
+        
+        #prune_count=0
+        if not has_finished_prune:
+            #pdb.set_trace()
+            prune_count+=1
+            if prune_count >= 6:
+                has_finished_prune = True
+                #print("yes")
+        else:
+            try:
+                act_masks = torch.load("/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks2.pth")
+                if x.shape == (batch_size, 3, 32, 32):
+                    mask = act_masks[0]
+                elif x.shape == (batch_size,128,32,32):
+                    mask = act_masks[1]
+                elif x.shape == (batch_size,128,16,16):
+                    mask = act_masks[2]
+                elif x.shape == (batch_size,256,16,16):
+                    mask = act_masks[3]
+                elif x.shape == (batch_size,256,8,8):
+                    mask = act_masks[4]
+                elif x.shape == (batch_size,512,8,8):
+                    mask = act_masks[5]
+                else:
+                    pass   
+            except:
+                pass
+
         return x * mask
 
     return ("register_forward_pre_hook", sparsify_input)

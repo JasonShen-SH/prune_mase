@@ -6,7 +6,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 
 # from torchmetrics.functional import accuracy
 from torchmetrics import Accuracy, MeanMetric
-
+import pdb
 
 class WrapperBase(pl.LightningModule):
     def __init__(
@@ -50,7 +50,7 @@ class WrapperBase(pl.LightningModule):
         self.acc_train(y_hat, y)
         self.log("train_acc_step", self.acc_train, prog_bar=True)
         self.log("train_loss_step", loss)
-
+        #pdb.set_trace()
         return loss
 
     def validation_step(self, batch, batch_idx):

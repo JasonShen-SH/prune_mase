@@ -9,6 +9,7 @@ from pathlib import Path
 
 import toml
 import torch
+import pdb
 
 # Housekeeping -------------------------------------------------------------------------
 os.environ["PYTHONBREAKPOINT"] = "ipdb.set_trace"
@@ -40,8 +41,8 @@ logger = logging.getLogger("chop.test")
 pp = pprint.PrettyPrinter(indent=4)
 
 configs = [
-    "scope_local_granularity_elementwise_method_random",
-    #"scope_local_granularity_elementwise_method_l1",
+    #"scope_local_granularity_elementwise_method_random",
+    "scope_local_granularity_elementwise_method_l1",
     #"scope_global_granularity_elementwise_method_l1",
 ]
 
@@ -134,6 +135,7 @@ def run_with_config(config_file):
     config = config["passes"]["prune"]
     config["input_generator"] = input_generator
     config["dummy_in"] = dummy_input
+    pdb.set_trace()
 
     # save_dir = root / f"mase_output/machop_test/prune/{config_name}"
     # save_dir.mkdir(parents=True, exist_ok=True)
@@ -201,7 +203,7 @@ def run_with_config(config_file):
     '''  
 
     # start to train
-    '''
+    
     from pytorch_lightning.callbacks import ModelCheckpoint
     import pytorch_lightning as pl
     import torch
@@ -234,6 +236,12 @@ def run_with_config(config_file):
 
     pl_model = LightningModel(model, learning_rate=3e-4)
 
+
+    gradients = []
+    def save_grad(grad):
+        gradients.append(grad)
+    hook = pl_model.fc1.weight.register_hook(save_grad)
+
     trainer_args = {
     'max_epochs': 10,
     #'progress_bar_refresh_rate': 20,
@@ -252,9 +260,6 @@ def run_with_config(config_file):
     trainer.fit(pl_model)
 
     # command line to re-train
-
-    '''
-
 
 
 test_prune()

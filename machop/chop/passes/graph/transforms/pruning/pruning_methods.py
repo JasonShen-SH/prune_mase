@@ -22,26 +22,11 @@ These implemntations are for the pruning functional we assume info always have t
         ...
     }
 """
-
-
 def random(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
-    """set sparsity percentage of values
-    in the mask to False (i.e. 0) randomly
-    Pre: sparsity is not 0.0
-
-    :param tensor: input tensor
-    :type tensor: torch.Tensor
-    :param sparsity: sparsity level, this suppose to be a ratio in between 0.0 and 1.0
-    :type sparsity: float
-    :return: a random sparsity mask generated based on the sparsity value
-    :rtype: torch.Tensor
-    """
     mask = torch.ones(tensor.size(), dtype=torch.bool, device=tensor.device)
     mask[torch.rand(tensor.size()) < sparsity] = False
     return mask
 
-
-# from flattened_tensor to threshold
 def handle_large_input_data(flat_tensor: torch.Tensor, sparsity: float):
     print(f"the input tensor is {flat_tensor.shape} and is divided into small batches")
     batch_unit = int(1e6)
@@ -55,166 +40,218 @@ def handle_large_input_data(flat_tensor: torch.Tensor, sparsity: float):
     threshold = torch.mean(torch.tensor(quantiles))
     return threshold
 
-# precise
+# Default: local
 
-
-def l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
-    """Use the L1 norm of values in the tensor
-    to rank them and return a mask where values
-    lower than the threshold are set to False (i.e. 0).
-    Pre: sparsity is not 0.0
-
-    :param tensor: input tensor
-    :type tensor: torch.Tensor
-    :param sparsity: sparsity level, this suppose to be a ratio between 0.0 and 1.0
-    :type sparsity: float
-    :return: a sparsity mask
-    :rtype: torch.Tensor
-    """
-    #pdb.set_trace()
+# 1. weights
+## 1.1: magnitude-based (element-wise / kernel-wise / channel-wise)
+def l1_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    #pdb.set_trace() # 针对activation
     flat_tensor = tensor.abs().flatten()
     try:
-        threshold = torch.quantile(tensor.abs().flatten(), sparsity)
+        threshold = torch.quantile(flat_tensor, sparsity)
     except RuntimeError as e:
         threshold = handle_large_input_data(flat_tensor, sparsity)
-
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
 
-
-def l2(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+def l2_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     l2_norms = tensor.pow(2).sqrt()
-    threshold = torch.quantile(l2_norms.flatten(), sparsity)
-    mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
+    flattended_l2_norms = l2_norms.flatten()
+    try:
+        threshold = torch.quantile(flattended_l2_norms, sparsity)
+    except RuntimeError as e:
+        threshold = handle_large_input_data(flattended_l2_norms, sparsity)
+    mask = (l2_norms > threshold).to(torch.bool).to(tensor.device)
     return mask
 
-# 目前只对conv2d做kernelwise的prune
 def kernel_l1_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
-    # tensor: n(i)*n(i-1)*k*k
     l1_norms = tensor.abs().sum(dim=(2,3))
     flattened_l1_norms = l1_norms.flatten()
-    threshold = torch.quantile(flattened_l1_norms, sparsity)  
-    mask = tensor.abs().sum(dim=(2, 3), keepdim=True) > threshold
+    try:
+        threshold = torch.quantile(flattened_l1_norms, sparsity)  
+    except:
+        threshold = handle_large_input_data(flattened_l1_norms, sparsity)
+    mask = (l1_norms > threshold).to(torch.bool).to(tensor.device)
     return mask
 
-# 目前只对conv2d做channelwise的prune
+def kernel_l2_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    l2_norms = torch.norm(tensor, p=2, dim=(2,3))
+    flattened_l2_norms = l2_norms.flatten()
+    try:
+        threshold = torch.quantile(flattened_l2_norms, sparsity)  
+    except:
+        threshold = handle_large_input_data(flattened_l2_norms, sparsity)
+    mask = (l2_norms > threshold).to(torch.bool).to(tensor.device)
+    return mask
+
 def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
-    # tensor: n(i)*n(i-1)*k*k
     l1_norms = tensor.abs().sum(dim=(1,2,3))
     flattened_l1_norms = l1_norms.flatten()
-    print("tensor");print(tensor.shape)
     if next_tensor != None:
         print("next tensor");print(next_tensor.shape)
-
     if next_tensor != None:
         next_l1_norms = next_tensor.abs().sum(dim=(0,2,3))
         flattened_next_l1_norms = next_l1_norms.flatten()
-        final_flattened_l1_norms = flattened_l1_norms + 0.000001*flattened_next_l1_norms
-        threshold = torch.quantile(final_flattened_l1_norms, sparsity)  
+        # final_flattened_l1_norms = flattened_l1_norms + 0.000001*flattened_next_l1_norms
+        final_flattened_l1_norms = flattened_l1_norms + 0.1*flattened_next_l1_norms
+        try:
+            threshold = torch.quantile(final_flattened_l1_norms, sparsity)  
+        except:
+            threshold = handle_large_input_data(final_flattened_l1_norms, sparsity)
     else:
-        threshold = torch.quantile(flattened_l1_norms, sparsity)  
-    mask = tensor.abs().sum(dim=(1, 2, 3), keepdim=True) > threshold
+        try:
+            threshold = torch.quantile(flattened_l1_norms, sparsity)  
+        except:
+            threshold = handle_large_input_data(flattened_l1_norms, sparsity)
+    mask = (l1_norms > threshold).to(torch.bool).to(tensor.device)
+    # mask = tensor.abs().sum(dim=(1, 2, 3), keepdim=True) > threshold
     return mask
 
-# def channel_l1_activation
+def channel_l2_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    # tensor: n(i)*n(i-1)*k*k
+    l2_norms = torch.norm(tensor, p=2, dim=(1,2,3))
+    flattened_l2_norms = l2_norms.flatten()
+    if next_tensor != None:
+        print("next tensor");print(next_tensor.shape)
+    if next_tensor != None:
+        next_l2_norms = next_tensor.abs().sum(dim=(0,2,3))
+        flattened_next_l2_norms = next_l2_norms.flatten()
+        final_flattened_l2_norms = flattened_l2_norms + 0.000001*flattened_next_l2_norms
+        try:
+            threshold = torch.quantile(final_flattened_l2_norms, sparsity)  
+        except:
+            threshold = handle_large_input_data(final_flattened_l2_norms, sparsity)
+    else:
+        try:
+            threshold = torch.quantile(flattened_l2_norms, sparsity) 
+        except:
+            threshold = handle_large_input_data(flattened_l2_norms, sparsity)
+    mask =  (l2_norms > threshold).to(torch.bool).to(tensor.device)
+    return mask
 
+## 1.2: gradient-based
+
+
+# 2. activation outputs 
+## 2.1: focus on each single activation element
+def activation_l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    flat_tensor = tensor.abs().flatten()
+    try:
+        threshold = torch.quantile(flat_tensor, sparsity)
+    except RuntimeError as e:
+        threshold = handle_large_input_data(flat_tensor, sparsity)
+    mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
+    return mask
+
+## 2.2: focus on neurons
+### 2.2.1: magnitude-based
+def activation_l1_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    #pdb.set_trace()
+    l1_norms = tensor.abs().sum(dim=(0,2,3)) # e.g: 3*(512*32*32)
+    flattened_l1_norms = l1_norms.flatten()
+    try:
+        threshold = torch.quantile(flattened_l1_norms, sparsity)  
+    except:
+        threshold = handle_large_input_data(flattened_l1_norms, sparsity)
+    mask = (l1_norms > threshold)
+    mask = mask.view(1, tensor.shape[1], 1, 1)
+    mask = mask.expand(tensor.shape[0], -1, tensor.shape[2], tensor.shape[3])
+    mask = mask.to(torch.bool).to(tensor.device)
+    return mask
+
+def activation_l2_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    l2_norms = tensor.abs().sum(dim=(0,2,3)) # e.g: 3*(512*32*32)
+    flattened_l2_norms = l2_norms.flatten()
+    try:
+        threshold = torch.quantile(flattened_l2_norms, sparsity)  
+    except:
+        threshold = handle_large_input_data(flattened_l2_norms, sparsity)
+    mask = (l2_norms > threshold)
+    mask = mask.view(1, tensor.shape[1], 1, 1)
+    mask = mask.expand(tensor.shape[0], -1, tensor.shape[2], tensor.shape[3])
+    mask = mask.to(torch.bool).to(tensor.device)
+    return mask
+
+### 2.2.2: similarity-based
+def channel_similarity_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    # tensor: n(i)*n(i-1)*k*k
+    flat_tensor = tensor.reshape(tensor.shape[1],-1)  # e.g: 3*(512*32*32)
+    # normalization
+    norms = torch.norm(flat_tensor, dim=1, keepdim=True)
+    normalized_tensor = flat_tensor / norms
+    cosine_similarity_matrix = torch.mm(normalized_tensor, normalized_tensor.t())
+    similarity_threshold = 0.1
+    similar_pairs = torch.where(cosine_similarity_matrix > similarity_threshold)
+    # convert the indices of similar pairs into lists and remove self-similar cases (diagonal elements)
+    similar_pairs = list(zip(similar_pairs[0].tolist(), similar_pairs[1].tolist()))
+    similar_pairs = [pair for pair in similar_pairs if pair[0] != pair[1]]
+    # Select the neurons' index to remove, Here we select the neurons with the larger index in each pair
+    indices_to_remove = set(pair[1] for pair in similar_pairs)
+    if len(indices_to_remove) > 0.1 * cosine_similarity_matrix.size(0):
+        print("Warning: Removing more than expected. Consider adjusting the threshold or removal strategy.")
+    # final neuron index to remove
+    indices_to_remove = sorted(indices_to_remove)[:int(0.1 * cosine_similarity_matrix.size(0))]
+    print("sparsity of this layer: ", len(indices_to_remove) / tensor.shape[1])
+    mask = torch.ones(cosine_similarity_matrix.size(0), dtype=torch.bool)
+    mask[indices_to_remove] = False
+    mask = mask.view(1, tensor.shape[1], 1, 1)
+    mask = mask.expand(tensor.shape[0], -1, tensor.shape[2], tensor.shape[3])
+    mask = mask.to(torch.bool).to(tensor.device)
+    return mask
+
+
+## EXTRA: global
+## We haven't implemented too many as they are basically the same as local methods.
+## It's relatively easy to change from each method in local to global.
 
 def global_weight_l1(tensor: torch.Tensor, info: dict, sparsity: float):
     tensors = [v["weight_value"] for _, v in info.items() if v is not None]
     flattened_tensors = tensors.abs().flatten()
     try:
-        threshold = torch.quantile(tensor.abs().flatten(), sparsity)
+        threshold = torch.quantile(flattened_tensors, sparsity)
     except RuntimeError as e:
         threshold = handle_large_input_data(flattened_tensors, sparsity)
-    mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
-    return mask
-
-def global_weight_l2(tensor: torch.Tensor, info: dict, sparsity: float):
-    tensors = [v["weight_value"] for _, v in info.items() if v is not None]
-    flattened_tensors = [t.pow(2).sqrt().flatten() for t in tensors]
-    threshold = torch.quantile(torch.cat(flattened_tensors, dim=0), sparsity)
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
 
 def global_activation_l1(tensor: torch.Tensor, info: dict, sparsity: float):
     tensors = [v["activation_value"] for _, v in info.items() if v is not None]
-    pdb.set_trace()
-    # 需要修改，似乎L1只能够用于channel_pruning，因为activation本身是（通过观察神经元输出）来选择神经元的
-    flattened_tensors = tensors.abs().flatten()
+    l1_norms = tensors.abs().sum(dim=(1,2,3))
+    flattened_tensors = l1_norms.flatten()
     try:
-        threshold = torch.quantile(tensor.abs().flatten(), sparsity)
+        threshold = torch.quantile(flattened_tensors, sparsity)
     except RuntimeError as e:
         threshold = handle_large_input_data(flattened_tensors, sparsity)
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
 
-def global_activation_l2(tensor: torch.Tensor, info: dict, sparsity: float):
-    tensors = [v["activation_value"] for _, v in info.items() if v is not None]
-    flattened_tensors = [t.pow(2).sqrt().flatten() for t in tensors]
-    threshold = torch.quantile(torch.cat(flattened_tensors, dim=0), sparsity)
-    mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
-    return mask
-
-"""this is from the old pruning old, leaving it here in case we need them later"""
-
-
-def neurons_random_rank(
-    tensor: torch.Tensor, sparsity: float, layer_type: str
-) -> torch.Tensor:
-    """set sparsity percentage of values
-    in the mask to False (i.e. 0) randomly
-    pre: sparsity is not 0.0
-
-    :param tensor: input tensor
-    :type tensor: torch.Tensor
-    :param sparsity: sparsity level, this suppose to be a ratio between 0.0 and 1.0
-    :type sparsity: float
-    :param layer_type: layer type can be in ["Linear", "Conv2d"]
-    :type layer_type: str
-    :return: a sparsity mask
-    :rtype: torch.Tensor
-    """
-    mask = torch.ones(tensor.size(), dtype=torch.bool)
-    mask = mask.reshape(tensor.shape[0], -1)
-    if layer_type == "Linear":
-        for i in range(tensor.shape[0]):
-            mask[i, torch.rand(tensor.shape[1]) < sparsity] = False
-    elif layer_type == "Conv2d":
-        for i in range(tensor.shape[0]):
-            mask[i, torch.rand(tensor.shape[1]) < sparsity] = False
-    else:
-        raise ValueError(f"{layer_type} is not supported")
-    mask.reshape(*tensor.shape)
-    return mask
-
-
-"""this is from the old pruning old, leaving it here in case we need them later"""
-
-
-# Pruning each neurons connections by specified fan_in randomly
-def neurons_random_fan_in(
-    tensor: torch.Tensor, sparsity: float, layer_type: str, fan_in: int
-) -> torch.Tensor:
-    if fan_in == None:
-        raise ValueError("fan_in is not been specified")
-    mask = torch.zeros(tensor.size(), dtype=torch.bool)
-    mask = mask.reshape(tensor.shape[0], -1)
-    if layer_type == "Linear":
-        for i in range(tensor.shape[0]):
-            mask[i, torch.randperm(tensor.shape[1])[:fan_in]] = True
-    elif layer_type == "Conv2d":
-        for i in range(tensor.shape[0]):
-            mask[i, torch.randperm(tensor.shape[1])[:fan_in]] = True
-    mask.reshape(*tensor.shape)
-    return mask
 
 
 weight_criteria_map = {
-    "local": {"elementwise": {"random": random, "l1-norm": l1, "l2-norm": l2}, "kernelwise": {"l1-norm": kernel_l1_weight}, "channelwise": {"l1-norm": channel_l1_weight}},
-    "global": {"elementwise": {"random": random, "l1-norm": global_weight_l1, "l2-norm": global_weight_l2}},
+    "local": {
+        "elementwise": {
+            "random": random, "l1-norm": l1_weight, "l2-norm": l2_weight
+        }, 
+        "kernelwise": {
+            "l1-norm": kernel_l1_weight, "l2-norm": kernel_l2_weight
+        }, 
+        "channelwise": {
+            "l1-norm": channel_l1_weight, "l2-norm": channel_l2_weight
+        },
+    },
+    "global": {"elementwise": {"random": random, "l1-norm": global_weight_l1}},
 }
 
 activation_criteria_map = {
-    "local": {"elementwise": {"random": random, "l1-norm": l1, "l2-norm": l2}},
-    "global": {"elementwise": {"random": random, "l1-norm": global_activation_l1, "l2-norm": global_activation_l2}},
+    "local": {
+        "elementwise": {
+            "l1-norm": l1_weight,
+        },
+        "channelwise": {
+            "neuron-l1-norm": activation_l1_neuron, "neuron-l2-norm": activation_l2_neuron, "neuron-similarity": channel_similarity_neuron
+        }
+    },
+    "global": {
+        "elementwise": {"random": random, "l1-norm": global_activation_l1}
+    },
 }

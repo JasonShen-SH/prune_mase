@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 PRUNEABLE_OPS = {"conv1d": nn.Conv1d, "conv2d": nn.Conv2d, "linear": nn.Linear}
 
 WEIGHT_PRUNE_METHODS = ["random", "l1-norm", "l2-norm"]
-ACTIVATION_PRUNE_METHODS = ["random", "l1-norm", "l2-norm"]
+ACTIVATION_PRUNE_METHODS = ["random", "l1-norm", "l2-norm", "neuron-l1-norm", "neuron-l2-norm", "neuron-similarity"]
 
 # A registry of available pruning strategies (i.e. algorithms)
 # PRUNE_METHODS = {
