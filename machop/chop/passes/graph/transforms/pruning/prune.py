@@ -341,13 +341,11 @@ def prune_graph_iterator(graph, batch_size, config: dict):
                     # check weight hook, if it exits, apply it
                     if node_hooks["w_hook"] is not None:
                         register_name, parameterization = node_hooks["w_hook"]
-                        print("aaaa")
                         # apply weight pruning
                         torch.nn.utils.parametrize.register_parametrization(
                             graph.modules[node.target], register_name, parameterization
                         )
                     if node_hooks["a_hook"] is not None:
-                        print("bbbb")
                         register_fn, hook_fn = node_hooks["a_hook"]
                         #pdb.set_trace()
                         #register_name, parameterization = node_hooks["a_hook"]

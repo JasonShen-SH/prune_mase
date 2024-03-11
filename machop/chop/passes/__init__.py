@@ -29,4 +29,6 @@ from .graph.transforms import (
     emit_bram_transform_pass,
     emit_internal_rtl_transform_pass,
     emit_cocotb_transform_pass,
+    huffman_transform_pass,
+    huffman_decode_pass,
 )

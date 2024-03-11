@@ -58,7 +58,6 @@ def graph_iterator_quantize_by_type(graph, config: dict):
     else:
         bl_graph = None
     for node in graph.fx_graph.nodes:
-        #pdb.set_trace()
         if get_mase_op(node) not in QUANTIZEABLE_OP:
             continue
         node_config = get_config(config, get_mase_op(node))

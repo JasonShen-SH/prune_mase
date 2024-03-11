@@ -187,11 +187,11 @@ def channel_similarity_neuron(tensor: torch.Tensor, info: dict, sparsity: float)
     similar_pairs = [pair for pair in similar_pairs if pair[0] != pair[1]]
     # Select the neurons' index to remove, Here we select the neurons with the larger index in each pair
     indices_to_remove = set(pair[1] for pair in similar_pairs)
-    if len(indices_to_remove) > 0.1 * cosine_similarity_matrix.size(0):
-        print("Warning: Removing more than expected. Consider adjusting the threshold or removal strategy.")
+    #if len(indices_to_remove) > 0.1 * cosine_similarity_matrix.size(0):
+        #print("Warning: Removing more than expected. Consider adjusting the threshold or removal strategy.")
     # final neuron index to remove
     indices_to_remove = sorted(indices_to_remove)[:int(0.1 * cosine_similarity_matrix.size(0))]
-    print("sparsity of this layer: ", len(indices_to_remove) / tensor.shape[1])
+    #print("sparsity of this layer: ", len(indices_to_remove) / tensor.shape[1])
     mask = torch.ones(cosine_similarity_matrix.size(0), dtype=torch.bool)
     mask[indices_to_remove] = False
     mask = mask.view(1, tensor.shape[1], 1, 1)

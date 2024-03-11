@@ -2,14 +2,17 @@ import os
 from copy import deepcopy
 from pathlib import Path
 import logging
+import copy
 
 import torch
+import pickle
 from chop.passes.graph import PASSES
 
 import pytorch_lightning as pl
 from chop.plt_wrapper import get_model_wrapper
 from chop.tools.checkpoint_load import load_model
 from chop.tools.get_input import get_dummy_input
+from chop.passes.graph.utils import get_mase_op, get_mase_type, get_node_actual_target
 
 from chop.passes.graph.analysis import (
     add_common_metadata_analysis_pass,
@@ -50,6 +53,8 @@ import gc
 gc.collect()
 
 import torch.nn.utils.prune as prune
+from chop.passes.graph.utils import get_node_actual_target
+
 
 global act_masks
 act_masks = None
@@ -58,9 +63,11 @@ logger = logging.getLogger(__name__)
 
 pp = pprint.PrettyPrinter(indent=4)
 
-def pre_transform_load(mask, load_name: str, load_type: str, model: torch.nn.Module):
+# test
+
+def pre_transform_load(mask, is_quantize, load_name: str, load_type: str, model: torch.nn.Module):
     if load_name is not None and load_type in ["pt", "pl"]:
-        model = load_model(mask, load_name=load_name, load_type=load_type, model=model)
+        model = load_model(mask, is_quantize, load_name=load_name, load_type=load_type, model=model)
     return model
 
 
@@ -79,14 +86,17 @@ def prune_and_retrain(
     load_type: str = None,
     accelerator: str = "auto",
 ):
+    is_quantize = False
     accelerator = parse_accelerator(accelerator)
     config = load_config(config)
-    #pdb.set_trace()
     load_name = config['retrain']['load_name']
     load_type = config['retrain']['load_type']
     
+    is_huffman = config['passes']['huffman']['is_huffman']
+    print("Huffman?: ", is_huffman)
+
     mask=None
-    model = pre_transform_load(mask, load_name=load_name, load_type=load_type, model=model)
+    model = pre_transform_load(mask, is_quantize, load_name=load_name, load_type=load_type, model=model)
     model.to(accelerator)
     
     save_dir = prune_save_dir
@@ -123,6 +133,7 @@ def prune_and_retrain(
         graph, _ = add_software_metadata_analysis_pass(graph, pass_args=None)
 
     pass_config = config["passes"]
+    huffman_pass_config = copy.deepcopy(pass_config)
 
     for pass_name, pass_config in pass_config.items():
         pass_name: str
@@ -145,7 +156,6 @@ def prune_and_retrain(
                 pass_config["input_generator"] = input_generator
                 #prune_save_dir = save_dir / "prune"
                 #prune_save_dir.mkdir(parents=True, exist_ok=True)
-                #prune_save_dir没有任何内容
                 batch_size = config['retrain']['training']['batch_size']
                 graph, _ = PASSES[pass_name](
                     graph,
@@ -163,32 +173,36 @@ def prune_and_retrain(
                 del act_masks
 
             case "quantize":
-                #pdb.set_trace()
                 gc.collect()
-                pass_save_dir = save_dir / "quantize"
                 graph, _ = metadata_value_type_cast_transform_pass(graph, pass_args={"fn": to_numpy_if_tensor})
-                ori_graph = deepcopy_mase_graph(graph)
-                #ori_graph = deepcopy(graph)
+                #ori_mg = deepcopy_mase_graph(graph)
                 graph, _ = PASSES["quantize"](graph, pass_args=pass_config)
-                PASSES["summarize_quantization"](ori_graph, graph, save_dir=pass_save_dir)
+                #PASSES["summarize_quantization"](ori_mg, graph, save_dir="quantize_summary")
+                # nn = [n for n in graph.fx_graph.nodes]
+                # from get_node_actual_target(n).weight to get_node_actual_target(n).w_quantizer(get_node_actual_target(n).weight)
+                is_quantize = True
 
-            case "remove_prune_wrappers":
-                # Removes the pruning-related hooks and makes pruning permanent
-                graph, _ = PASSES[pass_name](graph, pass_args=None)
+                for n in graph.nodes:
+                    if isinstance(get_node_actual_target(n), torch.nn.modules.Conv2d): 
+                        if 'mase' in n.meta:
+                            quantized_weight = get_node_actual_target(n).w_quantizer(get_node_actual_target(n).weight)
+                            graph.model.state_dict()['.'.join(n.name.rsplit('_', 1)) + ".weight"].copy_(quantized_weight)
+                            print(f"There is quantization at {n.name}, mase_op: {get_mase_op(n)}")
+
 
         assert isinstance(
             graph, MaseGraph
         ), f"Return type of {pass_name} must be MaseGraph, got {type(graph)}"
 
     if save_dir is not None:
-        #import pdb;pdb.set_trace()
+        # pdb.set_trace()
         transformed_ckpt = save_dir / "transformed_ckpt"
         transformed_ckpt.mkdir(parents=True, exist_ok=True)
         graph, _ = metadata_value_type_cast_transform_pass(
             graph, pass_args={"fn": to_numpy_if_tensor}
         )
-        graph, _ = save_mase_graph_interface_pass(graph, pass_args=transformed_ckpt) # save the pruned model
-
+        graph, _ = save_mase_graph_interface_pass(graph, pass_args=transformed_ckpt) 
+        # save the pruned model
 
     ###############################
     #re-train
@@ -198,14 +212,12 @@ def prune_and_retrain(
 
     class HessianComputationCallback(Callback):
         def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
-            # 这里仅作为示例，只选择第一个权重参数来计算 Hessian 的对角线
             loss = outputs['loss']
             named_parameters = list(pl_module.named_parameters())
             name, param = named_parameters[1]
             pdb.set_trace()
             if 'weight' in name:
                 hessian_diag = self.compute_hessian_diag(param, pl_module, loss)
-                # 打印 Hessian 对角线的统计摘要
                 print(f"[Batch {batch_idx}] Hessian Diagonal for {name}: max={hessian_diag.max().item()}, min={hessian_diag.min().item()}, mean={hessian_diag.mean().item()}")
         @staticmethod
         def compute_hessian_diag(param, model, loss):
@@ -246,15 +258,14 @@ def prune_and_retrain(
     plugins = None
     plt_trainer_args["plugins"] = plugins
 
-
     wrapper_cls = get_model_wrapper(model_info, task)
 
     load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
     load_type = "pt"
-    #import pdb; pdb.set_trace()
-
+    #pdb.set_trace()
+    
     if load_name is not None:
-        model = load_model(mask_collect, load_name, load_type=load_type, model=model)
+        model = load_model(mask_collect, is_quantize, load_name, load_type=load_type, model=model)
         #model = load_model(load_name, load_type=load_type, model=model)
         logger.info(f"'{load_type}' checkpoint loaded before training")
 
@@ -272,22 +283,21 @@ def prune_and_retrain(
         batch_size = config['retrain']['training']['batch_size'],
     )
 
-    trainer = pl.Trainer(**plt_trainer_args, max_epochs=config['retrain']['training']['max_epochs'])
+    trainer = pl.Trainer(
+        **plt_trainer_args, 
+        max_epochs=config['retrain']['training']['max_epochs'], 
+        limit_train_batches=3  # only 3 batches per epoch
+    )
 
     trainer.fit(
         pl_model,
         datamodule=data_module,
     )
-    # 训练的目的，不只是为了保存模型，更是为了去看准确率（也就是prune的效果到底有没有）
 
-    '''
-    if retrain_save_path is not None and load_name is not None and load_type == "mz":
-        graph = MaseGraph(model)
-        dummy_input = get_dummy_input(model_info, data_module, task)
-        graph = init_metadata_analysis_pass(graph, None)
-        graph = add_common_metadata_analysis_pass(graph, dummy_input)
-        graph = add_software_metadata_analysis_pass(graph, None)
-        train_ckpt = Path(retrain_save_path) / "train_ckpt"
-        train_ckpt.mkdir(parents=True, exist_ok=True)
-        save_mase_graph_interface_pass(graph, pass_args=train_ckpt)
-    '''
+    torch.save(pl_model.state_dict(), "chop/model.ckpt")
+
+
+    if is_huffman:
+        layer_huffman_info = PASSES["huffman"](pl_model, cf_args, model_info, data_module, task, accelerator, huffman_pass_config)
+        decoded_weights = PASSES["huffman_decode"](layer_huffman_info)
+        #print(decoded_weights)

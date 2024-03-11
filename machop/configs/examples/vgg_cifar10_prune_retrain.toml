@@ -30,8 +30,32 @@ method = "neuron-similarity"
 ##########################
 # quantize
 ##########################
+[passes.quantize]
+by = "type"
+[passes.quantize.default.config]
+name = "NA"
+[passes.quantize.linear.config]
+name = "integer"
+"data_in_width" = 8
+"data_in_frac_width" = 4
+"weight_width" = 8
+"weight_frac_width" = 4
+"bias_width" = 8
+"bias_frac_width" = 4
+[passes.quantize.conv2d.config]
+name = "integer"
+"data_in_width" = 8
+"data_in_frac_width" = 4
+"weight_width" = 8
+"weight_frac_width" = 4
+"bias_width" = 8
+"bias_frac_width" = 4
 
-
+##########################
+# huffman
+##########################
+[passes.huffman]
+is_huffman = true
 
 ##########################
 #retrain
@@ -52,4 +76,3 @@ batch_size = 512
 [retrain.trainer]
 devices = 1
 accelerator = "cpu"
-
