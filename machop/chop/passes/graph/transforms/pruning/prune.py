@@ -345,6 +345,7 @@ def prune_graph_iterator(graph, batch_size, config: dict):
                         torch.nn.utils.parametrize.register_parametrization(
                             graph.modules[node.target], register_name, parameterization
                         )
+                    '''
                     if node_hooks["a_hook"] is not None:
                         register_fn, hook_fn = node_hooks["a_hook"]
                         #pdb.set_trace()
@@ -354,18 +355,7 @@ def prune_graph_iterator(graph, batch_size, config: dict):
                         #torch.nn.utils.parametrize.register_parametrization(
                         #    graph.modules[node.target], register_name, parameterization
                         #)
-    '''
-    else: 我写的
-        for i, node in enumerate(graph.fx_graph.nodes):
-            # pruning only deals with modules at the moment
-            if node.op == "call_module":
-                name = node.target
-                for j in range(i + 1, len(graph.fx_graph.nodes, 1)):
-                    next_node = graph.fx_graph.nodes[j]
-                    if next_node.op == "call_module":
-                        next_name = next_node.target
-                        break
-    '''
+                    '''
 
     return graph
 

@@ -56,11 +56,11 @@ def l1_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor
 
 def l2_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     l2_norms = tensor.pow(2).sqrt()
-    flattended_l2_norms = l2_norms.flatten()
+    flattened_l2_norms = l2_norms.flatten()
     try:
-        threshold = torch.quantile(flattended_l2_norms, sparsity)
+        threshold = torch.quantile(flattened_l2_norms, sparsity)
     except RuntimeError as e:
-        threshold = handle_large_input_data(flattended_l2_norms, sparsity)
+        threshold = handle_large_input_data(flattened_l2_norms, sparsity)
     mask = (l2_norms > threshold).to(torch.bool).to(tensor.device)
     return mask
 
@@ -143,6 +143,16 @@ def activation_l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Te
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
 
+def activation_l2(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    l2_norms = tensor.pow(2).sqrt()
+    flattened_l2_norms = l2_norms.flatten()
+    try:
+        threshold = torch.quantile(flattened_l2_norms, sparsity)
+    except RuntimeError as e:
+        threshold = handle_large_input_data(flattened_l2_norms, sparsity)
+    mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
+    return mask
+
 ## 2.2: focus on neurons
 ### 2.2.1: magnitude-based
 def activation_l1_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
@@ -199,7 +209,6 @@ def channel_similarity_neuron(tensor: torch.Tensor, info: dict, sparsity: float)
     mask = mask.to(torch.bool).to(tensor.device)
     return mask
 
-
 ## EXTRA: global
 ## We haven't implemented too many as they are basically the same as local methods.
 ## It's relatively easy to change from each method in local to global.
@@ -227,6 +236,7 @@ def global_activation_l1(tensor: torch.Tensor, info: dict, sparsity: float):
 
 
 
+# for each configuration, try sparsity = 0.2, 0.5, 0.8 repsectively
 weight_criteria_map = {
     "local": {
         "elementwise": {
@@ -239,19 +249,19 @@ weight_criteria_map = {
             "l1-norm": channel_l1_weight, "l2-norm": channel_l2_weight
         },
     },
-    "global": {"elementwise": {"random": random, "l1-norm": global_weight_l1}},
+    "global": {"elementwise": {"l1-norm": global_weight_l1}},
 }
 
 activation_criteria_map = {
     "local": {
         "elementwise": {
-            "l1-norm": l1_weight,
+            "l1-norm": activation_l1, "l2-norm": activation_l2
         },
         "channelwise": {
             "neuron-l1-norm": activation_l1_neuron, "neuron-l2-norm": activation_l2_neuron, "neuron-similarity": channel_similarity_neuron
         }
     },
     "global": {
-        "elementwise": {"random": random, "l1-norm": global_activation_l1}
+        "elementwise": {"l1-norm": global_activation_l1}
     },
 }

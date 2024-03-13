@@ -162,15 +162,15 @@ def prune_and_retrain(
                     batch_size, # self_added
                     pass_config,
                 )
-                graph, sparsity_info, mask_collect, act_masks = PASSES["add_pruning_metadata"](
+                # graph, sparsity_info, mask_collect, act_masks = PASSES["add_pruning_metadata"](
+                graph, sparsity_info, mask_collect = PASSES["add_pruning_metadata"](
                     graph,
                     {"dummy_in": dummy_in, "add_value": False}
                 )
-                torch.save(act_masks, "/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks.pth")
-                print("activation mask saved")
-                #pdb.set_trace()
+                #torch.save(act_masks, "/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks.pth")
+                #print("activation mask saved")
                 pp.pprint(sparsity_info)
-                del act_masks
+                #del act_masks
 
             case "quantize":
                 gc.collect()
@@ -301,3 +301,6 @@ def prune_and_retrain(
         layer_huffman_info = PASSES["huffman"](pl_model, cf_args, model_info, data_module, task, accelerator, huffman_pass_config)
         decoded_weights = PASSES["huffman_decode"](layer_huffman_info)
         #print(decoded_weights)
+    
+
+    
