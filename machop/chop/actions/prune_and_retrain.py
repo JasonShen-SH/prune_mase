@@ -260,7 +260,8 @@ def prune_and_retrain(
 
     wrapper_cls = get_model_wrapper(model_info, task)
 
-    load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
+    # load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
+    load_name = "/content/prune_mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
     load_type = "pt"
     #pdb.set_trace()
     

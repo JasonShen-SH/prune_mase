@@ -6,7 +6,7 @@ dataset = "cifar10"
 task = "cls"
 
 batch_size = 512
-accelerator = "cpu"
+accelerator = "gpu"
 project = "vgg_cifar10_prune"
 seed = 42
 log_every_n_steps = 50 
@@ -76,4 +76,4 @@ batch_size = 512
 
 [retrain.trainer]
 devices = 1
-accelerator = "cpu"
+accelerator = "gpu"
