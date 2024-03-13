@@ -287,7 +287,7 @@ def prune_and_retrain(
     trainer = pl.Trainer(
         **plt_trainer_args, 
         max_epochs=config['retrain']['training']['max_epochs'], 
-        limit_train_batches=3  # only 3 batches per epoch
+        # limit_train_batches=3  only 3 batches per epoch
     )
 
     trainer.fit(

@@ -68,7 +68,7 @@ load_type = "pl"
 project = "vgg_cifar10_train"
 
 [retrain.training]
-max_epochs = 1
+max_epochs = 10
 weight_decay = 0
 optimizer = "adam"
 learning_rate = 1e-4
