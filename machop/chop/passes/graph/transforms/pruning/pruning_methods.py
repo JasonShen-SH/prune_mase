@@ -84,6 +84,7 @@ def kernel_l2_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch
     mask = (l2_norms > threshold).to(torch.bool).to(tensor.device)
     return mask
 
+
 def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     l1_norms = tensor.abs().sum(dim=(1,2,3))
     flattened_l1_norms = l1_norms.flatten()
@@ -104,8 +105,8 @@ def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dic
         except:
             threshold = handle_large_input_data(flattened_l1_norms, sparsity)
     mask = (l1_norms > threshold).to(torch.bool).to(tensor.device)
-    # mask = tensor.abs().sum(dim=(1, 2, 3), keepdim=True) > threshold
     return mask
+
 
 def channel_l2_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     # tensor: n(i)*n(i-1)*k*k

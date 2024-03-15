@@ -18,12 +18,16 @@ class FakeSparseWeight(torch.nn.Module):
         self.register_buffer("mask", mask)
 
     def forward(self, x):
-        self.mask = self.mask.expand(x.shape)
-        #print("Input shape: ", end="");print(x.shape)
-        #print("mask shape: ",end="");print(self.mask.shape)
         #pdb.set_trace()
+        try:
+            self.mask = self.mask.expand(x.shape)
+        except:
+            if len(self.mask.shape) == 2:
+                self.mask = self.mask.view(self.mask.shape[0],self.mask.shape[1], 1, 1).expand(-1,-1,3,3)
+            if len(self.mask.shape) == 1:
+                self.mask = self.mask.view(self.mask.shape[0], 1, 1, 1).expand(-1,x.shape[1],3,3)
         assert self.mask.shape == x.shape
-        #import pdb; pdb.set_trace()
+        #pdb.set_trace()
         return self.mask * x
 
     def state_dict(self, *args, **kwargs):
