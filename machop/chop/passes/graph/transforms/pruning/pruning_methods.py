@@ -85,7 +85,8 @@ def kernel_l2_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch
     return mask
 
 
-def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+def channel_l1_weight_multi_layer(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    # multi-layer channel pruning
     l1_norms = tensor.abs().sum(dim=(1,2,3))
     flattened_l1_norms = l1_norms.flatten()
     if next_tensor != None:
@@ -93,8 +94,53 @@ def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dic
     if next_tensor != None:
         next_l1_norms = next_tensor.abs().sum(dim=(0,2,3))
         flattened_next_l1_norms = next_l1_norms.flatten()
-        # final_flattened_l1_norms = flattened_l1_norms + 0.000001*flattened_next_l1_norms
-        final_flattened_l1_norms = flattened_l1_norms + 0.1*flattened_next_l1_norms
+        final_flattened_l1_norms = 0.5 * flattened_l1_norms + 0.5 * flattened_next_l1_norms   # change it to 0.9 and 0.1
+        try:
+            threshold = torch.quantile(final_flattened_l1_norms, sparsity)  
+        except:
+            threshold = handle_large_input_data(final_flattened_l1_norms, sparsity)
+    else:
+        try:
+            threshold = torch.quantile(flattened_l1_norms, sparsity)  
+        except:
+            threshold = handle_large_input_data(flattened_l1_norms, sparsity)
+    mask = (l1_norms > threshold).to(torch.bool).to(tensor.device)
+    return mask
+
+
+def channel_l2_weight_multi_layer(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    # multi-layer channel pruning
+    l2_norms = torch.norm(tensor, p=2, dim=(1,2,3))
+    flattened_l2_norms = l2_norms.flatten()
+    if next_tensor != None:
+        print("next tensor");print(next_tensor.shape)
+    if next_tensor != None:
+        next_l2_norms = next_tensor.abs().sum(dim=(0,2,3))
+        flattened_next_l2_norms = next_l2_norms.flatten()
+        final_flattened_l2_norms = 0.5 * flattened_l2_norms + 0.5 * flattened_next_l2_norms   # change it to 0.9 and 0.1
+        try:
+            threshold = torch.quantile(final_flattened_l2_norms, sparsity)  
+        except:
+            threshold = handle_large_input_data(final_flattened_l2_norms, sparsity)
+    else:
+        try:
+            threshold = torch.quantile(flattened_l2_norms, sparsity) 
+        except:
+            threshold = handle_large_input_data(flattened_l2_norms, sparsity)
+    mask =  (l2_norms > threshold).to(torch.bool).to(tensor.device)
+    return mask
+
+
+def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+    # single-layer channel pruning
+    l1_norms = tensor.abs().sum(dim=(1,2,3))
+    flattened_l1_norms = l1_norms.flatten()
+    if next_tensor != None:
+        print("next tensor");print(next_tensor.shape)
+    if next_tensor != None:
+        next_l1_norms = next_tensor.abs().sum(dim=(0,2,3))
+        flattened_next_l1_norms = next_l1_norms.flatten()
+        final_flattened_l1_norms = flattened_l1_norms
         try:
             threshold = torch.quantile(final_flattened_l1_norms, sparsity)  
         except:
@@ -109,7 +155,7 @@ def channel_l1_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dic
 
 
 def channel_l2_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
-    # tensor: n(i)*n(i-1)*k*k
+    # single-layer channel pruning
     l2_norms = torch.norm(tensor, p=2, dim=(1,2,3))
     flattened_l2_norms = l2_norms.flatten()
     if next_tensor != None:
@@ -117,7 +163,7 @@ def channel_l2_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dic
     if next_tensor != None:
         next_l2_norms = next_tensor.abs().sum(dim=(0,2,3))
         flattened_next_l2_norms = next_l2_norms.flatten()
-        final_flattened_l2_norms = flattened_l2_norms + 0.000001*flattened_next_l2_norms
+        final_flattened_l2_norms = flattened_l2_norms
         try:
             threshold = torch.quantile(final_flattened_l2_norms, sparsity)  
         except:
@@ -129,6 +175,8 @@ def channel_l2_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dic
             threshold = handle_large_input_data(flattened_l2_norms, sparsity)
     mask =  (l2_norms > threshold).to(torch.bool).to(tensor.device)
     return mask
+
+
 
 ## 1.2: gradient-based
 
@@ -157,7 +205,6 @@ def activation_l2(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Te
 ## 2.2: focus on neurons
 ### 2.2.1: magnitude-based
 def activation_l1_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
-    #pdb.set_trace()
     l1_norms = tensor.abs().sum(dim=(0,2,3)) # e.g: 3*(512*32*32)
     flattened_l1_norms = l1_norms.flatten()
     try:
@@ -190,7 +237,7 @@ def channel_similarity_neuron(tensor: torch.Tensor, info: dict, sparsity: float)
     # normalization
     norms = torch.norm(flat_tensor, dim=1, keepdim=True)
     normalized_tensor = flat_tensor / norms
-    cosine_similarity_matrix = torch.mm(normalized_tensor, normalized_tensor.t())
+    cosine_similarity_matrix = torch.mm(normalized_tensor, normalized_tensor.t())  # cosine similarity
     similarity_threshold = 0.1
     similar_pairs = torch.where(cosine_similarity_matrix > similarity_threshold)
     # convert the indices of similar pairs into lists and remove self-similar cases (diagonal elements)
@@ -216,7 +263,9 @@ def channel_similarity_neuron(tensor: torch.Tensor, info: dict, sparsity: float)
 
 def global_weight_l1(tensor: torch.Tensor, info: dict, sparsity: float):
     tensors = [v["weight_value"] for _, v in info.items() if v is not None]
-    flattened_tensors = tensors.abs().flatten()
+    flattened_tensors = [tensor.abs().flatten() for tensor in tensors]
+    flattened_tensors = torch.cat(flattened_tensors)
+    # flattened_tensors = tensors.abs().flatten()
     try:
         threshold = torch.quantile(flattened_tensors, sparsity)
     except RuntimeError as e:
@@ -226,8 +275,9 @@ def global_weight_l1(tensor: torch.Tensor, info: dict, sparsity: float):
 
 def global_activation_l1(tensor: torch.Tensor, info: dict, sparsity: float):
     tensors = [v["activation_value"] for _, v in info.items() if v is not None]
-    l1_norms = tensors.abs().sum(dim=(1,2,3))
-    flattened_tensors = l1_norms.flatten()
+    flattened_tensors = [tensor.abs().sum(dim=(1,2,3)).flatten() for tensor in tensors]
+    flattened_tensors = torch.cat(flattened_tensors)
+    #flattened_tensors = l1_norms.flatten()
     try:
         threshold = torch.quantile(flattened_tensors, sparsity)
     except RuntimeError as e:
@@ -247,7 +297,8 @@ weight_criteria_map = {
             "l1-norm": kernel_l1_weight, "l2-norm": kernel_l2_weight
         }, 
         "channelwise": {
-            "l1-norm": channel_l1_weight, "l2-norm": channel_l2_weight
+            "l1-norm-multi": channel_l1_weight_multi_layer, "l2-norm-multi": channel_l2_weight_multi_layer,
+            "l1-norm-single": channel_l1_weight,  "l2-norm-single": channel_l2_weight
         },
     },
     "global": {"elementwise": {"l1-norm": global_weight_l1}},

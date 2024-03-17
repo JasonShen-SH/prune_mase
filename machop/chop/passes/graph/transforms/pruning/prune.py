@@ -356,7 +356,6 @@ def prune_graph_iterator(graph, batch_size, config: dict):
                         #    graph.modules[node.target], register_name, parameterization
                         #)
                     '''
-
     return graph
 
 
@@ -376,7 +375,5 @@ def prune_transform_pass(graph, batch_size, pass_args: dict = {}):
     :rtype: tuple
     """
     graph = prune_graph_iterator(graph, batch_size, pass_args)
-
-    #print(type(graph.model))
 
     return graph, {}

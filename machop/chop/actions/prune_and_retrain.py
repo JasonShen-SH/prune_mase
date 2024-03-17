@@ -162,15 +162,16 @@ def prune_and_retrain(
                     batch_size, # self_added
                     pass_config,
                 )
-                # graph, sparsity_info, mask_collect, act_masks = PASSES["add_pruning_metadata"](
+                #graph, sparsity_info, mask_collect, act_masks = PASSES["add_pruning_metadata"](
                 graph, sparsity_info, mask_collect = PASSES["add_pruning_metadata"](
                     graph,
                     {"dummy_in": dummy_in, "add_value": False}
                 )
                 #torch.save(act_masks, "/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks.pth")
                 #print("activation mask saved")
-                pp.pprint(sparsity_info)
-                #del act_masks
+                #pp.pprint(sparsity_info)
+
+                #del act_masks # to save memory
 
             case "quantize":
                 gc.collect()
@@ -215,7 +216,7 @@ def prune_and_retrain(
             loss = outputs['loss']
             named_parameters = list(pl_module.named_parameters())
             name, param = named_parameters[1]
-            pdb.set_trace()
+            #pdb.set_trace()
             if 'weight' in name:
                 hessian_diag = self.compute_hessian_diag(param, pl_module, loss)
                 print(f"[Batch {batch_idx}] Hessian Diagonal for {name}: max={hessian_diag.max().item()}, min={hessian_diag.min().item()}, mean={hessian_diag.mean().item()}")
