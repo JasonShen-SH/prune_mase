@@ -30,6 +30,7 @@ method = "l1-norm"
 ##########################
 # quantize
 ##########################
+# comment all the "passes.quantize" when need to
 [passes.quantize]
 by = "type"
 [passes.quantize.default.config]
