@@ -22,7 +22,7 @@ granularity = "channelwise"
 method = "l1-norm-single"
 
 [passes.prune.activation]
-sparsity = 0.1
+sparsity = 0.0
 scope = "local"
 granularity = "elementwise"
 method = "l1-norm"
