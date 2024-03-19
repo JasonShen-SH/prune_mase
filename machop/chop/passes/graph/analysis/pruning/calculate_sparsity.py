@@ -36,34 +36,36 @@ def graph_iterator_for_metadata(graph, dummy_in=None, add_value=True):
             #if isinstance(modules[node.target], (torch.nn.Conv2d, torch.nn.Linear)):
             if isinstance(modules[node.target], (torch.nn.Conv2d)):
                 # parameterizations is a list, we assume we only have one single entry
+                '''
                 mask = modules[node.target].parametrizations.weight[0].mask  # weight_mask
                 weight_sparsity = 1 - float(mask.sum() / mask.numel())
                 meta.parameters["software"]["args"]["weight"][
                     "sparsity"
                 ] = weight_sparsity
+                '''
 
-                #act_mask = modules[node.target].activation_mask  # activation
-                #act_mask = modules[node.target].parametrizations.data_in_0[0].mask  
-                #act_sparsity = 1 - float(act_mask.sum() / act_mask.numel())
-                #meta.parameters["software"]["args"]["data_in_0"][
-                #    "sparsity"
-                #] = act_sparsity
+                act_mask = modules[node.target].activation_mask  # activation 
+                act_sparsity = 1 - float(act_mask.sum() / act_mask.numel())
+                meta.parameters["software"]["args"]["data_in_0"][
+                    "sparsity"
+                ] = act_sparsity
 
-                #if add_value:
-                    # meta.parameters["software"]["args"]["weight"]["mask_value"] = mask
-                    #meta.parameters["software"]["args"]["weight_mask"][
-                    #    "value"
-                    #] = act_mask
+                if add_value:
+                    #meta.parameters["software"]["args"]["weight"]["mask_value"] = mask
+                    meta.parameters["software"]["args"]["weight_mask"][
+                        "value"
+                    ] = act_mask
                 sparsity_info[node.target] = {
-                    "weight_sparsity": weight_sparsity,
-                    #"activation_sparsity": act_sparsity,
+                    #"weight_sparsity": weight_sparsity,
+                    "activation_sparsity": act_sparsity,
                 }
 
-                weight_masks.append(mask)
-                #act_masks.append(act_mask)
+                #weight_masks.append(mask)
+                act_masks.append(act_mask)
 
         env[node.name] = result
-    return graph, sparsity_info, weight_masks#, act_masks
+    # return graph, sparsity_info, weight_masks, act_masks
+    return graph, sparsity_info, act_masks
 
 
 def add_pruning_metadata_analysis_pass(graph, pass_args: dict = {}):
@@ -83,8 +85,10 @@ def add_pruning_metadata_analysis_pass(graph, pass_args: dict = {}):
     :rtype: tuple(MaseGraph, dict)
     """
 
+    graph, sparsity_info, act_masks = graph_iterator_for_metadata(
     # graph, sparsity_info, weight_masks, act_masks = graph_iterator_for_metadata(
-    graph, sparsity_info, weight_masks = graph_iterator_for_metadata(
+    # graph, sparsity_info, weight_masks = graph_iterator_for_metadata(
         graph, pass_args["dummy_in"], pass_args["add_value"]
     )
-    return graph, sparsity_info, weight_masks#, act_masks
+    # return graph, sparsity_info, weight_masks, act_masks
+    return graph, sparsity_info, act_masks

@@ -30,18 +30,19 @@ def load_unwrapped_ckpt(mask, is_quantize, checkpoint: str, model: torch.nn.Modu
     """
     Load a PyTorch state dict or checkpoint containing state dict to a PyTorch model.
     """
-    print("is_quantize: ",end="");print(is_quantize)
+    print("has_quantized? ",end="");print(is_quantize)
     state_dict = torch.load(checkpoint)
     if "state_dict" in state_dict:
         state_dict = state_dict["state_dict"]
     
-    # we have to add mask_keys
-    state_dict['feature_layers.0.parametrizations.weight.0.mask'] = mask[0]
-    state_dict['feature_layers.3.parametrizations.weight.0.mask'] = mask[1]
-    state_dict['feature_layers.7.parametrizations.weight.0.mask'] = mask[2]
-    state_dict['feature_layers.10.parametrizations.weight.0.mask'] = mask[3]
-    state_dict['feature_layers.14.parametrizations.weight.0.mask'] = mask[4]
-    state_dict['feature_layers.17.parametrizations.weight.0.mask'] = mask[5]
+    if mask != None:
+    # we have to add mask_keys if weights are pruned
+        state_dict['feature_layers.0.parametrizations.weight.0.mask'] = mask[0]
+        state_dict['feature_layers.3.parametrizations.weight.0.mask'] = mask[1]
+        state_dict['feature_layers.7.parametrizations.weight.0.mask'] = mask[2]
+        state_dict['feature_layers.10.parametrizations.weight.0.mask'] = mask[3]
+        state_dict['feature_layers.14.parametrizations.weight.0.mask'] = mask[4]
+        state_dict['feature_layers.17.parametrizations.weight.0.mask'] = mask[5]
     
     if is_quantize == True:
         new_state_dict = {}
@@ -73,7 +74,6 @@ def load_graph_module_ckpt(checkpoint: str):
 
 def load_model(
     mask, is_quantize, load_name: str, load_type: str = "mz", model: torch.nn.Module = None
-    #load_name: str, load_type: str = "mz", model: torch.nn.Module = None
 ) -> torch.nn.Module | torch.fx.GraphModule:
     """Load a pytorch/lightning/mase checkpoint to a model.
 

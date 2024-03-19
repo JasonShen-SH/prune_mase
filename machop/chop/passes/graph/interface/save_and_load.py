@@ -154,7 +154,7 @@ def save_mase_graph_interface_pass(graph, pass_args: dict = {}):
     # restore metadata.parameters
     graph, _ = init_metadata_analysis_pass(graph)
     graph = graph_iterator_add_n_meta_param(graph, node_n_meta_param)
-    logger.info(f"Saved mase graph to {save_dir}")
+    #logger.info(f"Saved mase graph to {save_dir}")
     return graph, {}
 
 

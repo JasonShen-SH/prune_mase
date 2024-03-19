@@ -204,7 +204,7 @@ def activation_l2(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Te
 
 ## 2.2: focus on neurons
 ### 2.2.1: magnitude-based
-def activation_l1_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+def activation_l1_feature_map(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     l1_norms = tensor.abs().sum(dim=(0,2,3)) # e.g: 3*(512*32*32)
     flattened_l1_norms = l1_norms.flatten()
     try:
@@ -217,7 +217,7 @@ def activation_l1_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> t
     mask = mask.to(torch.bool).to(tensor.device)
     return mask
 
-def activation_l2_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+def activation_l2_feature_map(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     l2_norms = tensor.abs().sum(dim=(0,2,3)) # e.g: 3*(512*32*32)
     flattened_l2_norms = l2_norms.flatten()
     try:
@@ -310,7 +310,7 @@ activation_criteria_map = {
             "l1-norm": activation_l1, "l2-norm": activation_l2
         },
         "channelwise": {
-            "neuron-l1-norm": activation_l1_neuron, "neuron-l2-norm": activation_l2_neuron, "neuron-similarity": channel_similarity_neuron
+            "neuron-l1-norm": activation_l1_feature_map, "neuron-l2-norm": activation_l2_feature_map, "neuron-similarity": channel_similarity_neuron
         }
     },
     "global": {

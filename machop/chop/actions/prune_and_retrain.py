@@ -162,16 +162,17 @@ def prune_and_retrain(
                     batch_size, # self_added
                     pass_config,
                 )
+                graph, sparsity_info, act_masks = PASSES["add_pruning_metadata"](
                 #graph, sparsity_info, mask_collect, act_masks = PASSES["add_pruning_metadata"](
-                graph, sparsity_info, mask_collect = PASSES["add_pruning_metadata"](
+                #graph, sparsity_info, mask_collect = PASSES["add_pruning_metadata"](
                     graph,
                     {"dummy_in": dummy_in, "add_value": False}
                 )
                 #torch.save(act_masks, "/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks.pth")
                 #print("activation mask saved")
-                #pp.pprint(sparsity_info)
+                pp.pprint(sparsity_info)
 
-                #del act_masks # to save memory
+                del act_masks # to save memory
 
             case "quantize":
                 gc.collect()
@@ -196,7 +197,6 @@ def prune_and_retrain(
         ), f"Return type of {pass_name} must be MaseGraph, got {type(graph)}"
 
     if save_dir is not None:
-        # pdb.set_trace()
         transformed_ckpt = save_dir / "transformed_ckpt"
         transformed_ckpt.mkdir(parents=True, exist_ok=True)
         graph, _ = metadata_value_type_cast_transform_pass(
@@ -204,6 +204,28 @@ def prune_and_retrain(
         )
         graph, _ = save_mase_graph_interface_pass(graph, pass_args=transformed_ckpt) 
         # save the pruned model
+
+    # calculate model size and flops:
+
+    def model_storage_size(model):
+        total_bits = 0 
+        for name, param in model.named_parameters():
+            if param.requires_grad and 'weight' in name:
+                if "parametrizations" in name:
+                    bits = param.numel() * 4  # quantize (only the Conv2d weights are actually pruned)
+                    total_bits += bits
+                else:
+                    bits = param.numel() * 32 
+                    total_bits += bits
+            elif param.requires_grad and 'bias' in name:
+                bits = param.numel() * 32
+                total_bits += bits
+        total_bytes = total_bits / 8
+        return total_bytes
+    
+    total_bytes = model_storage_size(model)
+    print("total_bytes: ",total_bytes)
+
 
     ###############################
     #re-train
@@ -223,6 +245,7 @@ def prune_and_retrain(
         @staticmethod
         def compute_hessian_diag(param, model, loss):
             model.eval()
+            loss.requires_grad_(True)
             first_order_grads = torch.autograd.grad(loss, param, create_graph=True, allow_unused=True)
 
             hessian_diag = []
@@ -261,16 +284,18 @@ def prune_and_retrain(
 
     wrapper_cls = get_model_wrapper(model_info, task)
 
-    #load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
-    load_name = "/content/prune_mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
+    load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
+    #load_name = "/content/prune_mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
     load_type = "pt"
     #pdb.set_trace()
     
     if load_name is not None:
+        mask_collect = None
         model = load_model(mask_collect, is_quantize, load_name, load_type=load_type, model=model)
-        #model = load_model(load_name, load_type=load_type, model=model)
         logger.info(f"'{load_type}' checkpoint loaded before training")
 
+    # activation pruning, no need to quantize the weights,
+    # huffman coding could be done without training
 
     plt_trainer_args['accelerator'] = config['retrain']['trainer']['accelerator']
     plt_trainer_args['devices'] = config['retrain']['trainer']['devices']
@@ -288,7 +313,6 @@ def prune_and_retrain(
     trainer = pl.Trainer(
         **plt_trainer_args, 
         max_epochs=config['retrain']['training']['max_epochs'], 
-        # limit_train_batches=3  only 3 batches per epoch
     )
 
     trainer.fit(
@@ -303,6 +327,4 @@ def prune_and_retrain(
         layer_huffman_info = PASSES["huffman"](pl_model, cf_args, model_info, data_module, task, accelerator, huffman_pass_config)
         decoded_weights = PASSES["huffman_decode"](layer_huffman_info)
         #print(decoded_weights)
-    
-
     
