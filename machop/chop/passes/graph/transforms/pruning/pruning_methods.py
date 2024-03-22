@@ -45,7 +45,6 @@ def handle_large_input_data(flat_tensor: torch.Tensor, sparsity: float):
 # 1. weights
 ## 1.1: magnitude-based (element-wise / kernel-wise / channel-wise)
 def l1_weight(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
-    #pdb.set_trace() # 针对activation
     flat_tensor = tensor.abs().flatten()
     try:
         threshold = torch.quantile(flat_tensor, sparsity)

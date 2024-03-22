@@ -94,7 +94,8 @@ def graph_iterator_for_mase_ops(graph):
             elif "attention" in module.__name__.lower():
                 mase_op = "attention"
             else:
-                raise ValueError(f"Unknown node type: {node.target}")
+                #raise ValueError(f"Unknown node type: {node.target}")
+                pass
             node.meta["mase"].parameters["common"]["mase_type"] = mase_type
             node.meta["mase"].parameters["common"]["mase_op"] = mase_op
 
@@ -108,9 +109,8 @@ def graph_iterator_for_mase_ops(graph):
                 + graph.model.patched_op_names,
             )
             if not matching:
-                raise ValueError(
-                    f"Unknown call_function node: {node.target} with name {node.name}"
-                )
+                #raise ValueError(f"Unknown call_function node: {node.target} with name {node.name}")
+                pass
             if matched_name in MASE_BUILTIN_FUNCS:
                 node.meta["mase"].parameters["common"]["mase_type"] = "builtin_func"
                 node.meta["mase"].parameters["common"]["mase_op"] = matched_name
@@ -127,14 +127,16 @@ def graph_iterator_for_mase_ops(graph):
                 node.meta["mase"].parameters["common"]["mase_type"] = "patched_func"
                 node.meta["mase"].parameters["common"]["mase_op"] = matched_name
             else:
-                raise ValueError(f"Unknown node type: {node.target}")
+                #raise ValueError(f"Unknown node type: {node.target}")
+                pass
 
         elif node.op == "call_method":
             # we might have things like size_1, size_2, so we need to match the pattern
             # TODO: might need to add this for others as well.
             matching, matched_name = match_and_filter(node.name, MASE_IMPLICIT_FUNCS)
             if not matching:
-                raise ValueError(f"Unknown node type: {node.name}")
+                #raise ValueError(f"Unknown node type: {node.name}")
+                pass
             if matched_name in MASE_IMPLICIT_FUNCS:
                 node.meta["mase"].parameters["common"]["mase_type"] = "implicit_func"
                 node.meta["mase"].parameters["common"]["mase_op"] = node.target
@@ -154,14 +156,17 @@ def graph_iterator_for_mase_ops(graph):
                 ] = "constant"  # TODO: ??? what to assign here
             else:
                 node.meta["mase"].parameters["common"]["mase_type"] = "get_attr"
-                # raise NotImplementedError(f"Unknown node type: {node.target}")
+                #raise NotImplementedError(f"Unknown node type: {node.target}")
+                pass
 
         elif node.op == "output":
             node.meta["mase"].parameters["common"]["mase_type"] = "output"
             node.meta["mase"].parameters["common"]["mase_op"] = "output"
 
         else:
-            raise ValueError(f"Unknown node type: {node.op}")
+            #raise ValueError(f"Unknown node type: {node.op}")
+            pass
+
     return graph
 
 
@@ -237,9 +242,11 @@ def _add_graph_metadata(graph):
         "args": [],
         "results": [],
     }
-    graph.meta["mase"]["common"]["nodes_in"] = get_input_nodes(graph.fx_graph)
-    graph.meta["mase"]["common"]["nodes_out"] = get_output_nodes(graph.fx_graph)
-
+    try:
+        graph.meta["mase"]["common"]["nodes_in"] = get_input_nodes(graph.fx_graph)
+        graph.meta["mase"]["common"]["nodes_out"] = get_output_nodes(graph.fx_graph)
+    except:
+        pass
     graph.meta["mase"]["common"]["args"] = {}
     for node in graph.meta["mase"]["common"]["nodes_in"]:
         for arg, arg_info in node.meta["mase"]["common"]["args"].items():

@@ -11,8 +11,8 @@ def load_lightning_ckpt_to_unwrapped_model(checkpoint: str, model: torch.nn.Modu
     """
     Load a PyTorch Lightning checkpoint to a PyTorch model.
     """
-    src_state_dict = torch.load(checkpoint)["state_dict"] # gpu
-    #src_state_dict = torch.load(checkpoint, map_location=torch.device('cpu'))["state_dict"] #cpu
+    #src_state_dict = torch.load(checkpoint)["state_dict"] # gpu
+    src_state_dict = torch.load(checkpoint, map_location=torch.device('cpu'))["state_dict"] #cpu
     tgt_state_dict = model.state_dict()
     new_tgt_state_dict = {}
     for k, v in src_state_dict.items():
@@ -26,7 +26,7 @@ def load_lightning_ckpt_to_unwrapped_model(checkpoint: str, model: torch.nn.Modu
     return model
 
 
-def load_unwrapped_ckpt(mask, is_quantize, checkpoint: str, model: torch.nn.Module):
+def load_unwrapped_ckpt(model_name, mask, is_quantize, checkpoint: str, model: torch.nn.Module):
     """
     Load a PyTorch state dict or checkpoint containing state dict to a PyTorch model.
     """
@@ -35,15 +35,37 @@ def load_unwrapped_ckpt(mask, is_quantize, checkpoint: str, model: torch.nn.Modu
     if "state_dict" in state_dict:
         state_dict = state_dict["state_dict"]
     
-    if mask != None:
     # we have to add mask_keys if weights are pruned
-        state_dict['feature_layers.0.parametrizations.weight.0.mask'] = mask[0]
-        state_dict['feature_layers.3.parametrizations.weight.0.mask'] = mask[1]
-        state_dict['feature_layers.7.parametrizations.weight.0.mask'] = mask[2]
-        state_dict['feature_layers.10.parametrizations.weight.0.mask'] = mask[3]
-        state_dict['feature_layers.14.parametrizations.weight.0.mask'] = mask[4]
-        state_dict['feature_layers.17.parametrizations.weight.0.mask'] = mask[5]
-    
+    if mask != None:
+        if "vgg" in model_name:
+            state_dict['feature_layers.0.parametrizations.weight.0.mask'] = mask[0]
+            state_dict['feature_layers.3.parametrizations.weight.0.mask'] = mask[1]
+            state_dict['feature_layers.7.parametrizations.weight.0.mask'] = mask[2]
+            state_dict['feature_layers.10.parametrizations.weight.0.mask'] = mask[3]
+            state_dict['feature_layers.14.parametrizations.weight.0.mask'] = mask[4]
+            state_dict['feature_layers.17.parametrizations.weight.0.mask'] = mask[5]
+        elif "resnet" in model_name:
+            state_dict['conv1.parametrizations.weight.0.mask'] = mask[0]
+            state_dict['layer1.0.conv1.parametrizations.weight.0.mask'] = mask[1]
+            state_dict['layer1.0.conv2.parametrizations.weight.0.mask'] = mask[2]
+            state_dict['layer1.1.conv1.parametrizations.weight.0.mask'] = mask[3]
+            state_dict['layer1.1.conv2.parametrizations.weight.0.mask'] = mask[4]
+            state_dict['layer2.0.conv1.parametrizations.weight.0.mask'] = mask[5]
+            state_dict['layer2.0.conv2.parametrizations.weight.0.mask'] = mask[6]
+            state_dict['layer2.0.downsample.0.parametrizations.weight.0.mask'] = mask[7]
+            state_dict['layer2.1.conv1.parametrizations.weight.0.mask'] = mask[8]
+            state_dict['layer2.1.conv2.parametrizations.weight.0.mask'] = mask[9]
+            state_dict['layer3.0.conv1.parametrizations.weight.0.mask'] = mask[10]
+            state_dict['layer3.0.conv2.parametrizations.weight.0.mask'] = mask[11]
+            state_dict['layer3.0.downsample.0.parametrizations.weight.0.mask'] = mask[12]
+            state_dict['layer3.1.conv1.parametrizations.weight.0.mask'] = mask[13]
+            state_dict['layer3.1.conv2.parametrizations.weight.0.mask'] = mask[14]
+            state_dict['layer4.0.conv1.parametrizations.weight.0.mask'] = mask[15]
+            state_dict['layer4.0.conv2.parametrizations.weight.0.mask'] = mask[16]
+            state_dict['layer4.0.downsample.0.parametrizations.weight.0.mask'] = mask[17]
+            state_dict['layer4.1.conv1.parametrizations.weight.0.mask'] = mask[18]
+            state_dict['layer4.1.conv2.parametrizations.weight.0.mask'] = mask[19]
+
     if is_quantize == True:
         new_state_dict = {}
         for key, value in state_dict.items():
@@ -73,7 +95,7 @@ def load_graph_module_ckpt(checkpoint: str):
 
 
 def load_model(
-    mask, is_quantize, load_name: str, load_type: str = "mz", model: torch.nn.Module = None
+    model_name, mask, is_quantize, load_name: str, load_type: str = "mz", model: torch.nn.Module = None
 ) -> torch.nn.Module | torch.fx.GraphModule:
     """Load a pytorch/lightning/mase checkpoint to a model.
 
@@ -98,7 +120,7 @@ def load_model(
         raise ValueError(f"Unknown extension for 'load_type': {load_type}")
 
     if load_type == "pt":
-        model = load_unwrapped_ckpt(mask, is_quantize, checkpoint=load_name, model=model)
+        model = load_unwrapped_ckpt(model_name, mask, is_quantize, checkpoint=load_name, model=model)
         logger.info(f"Loaded pytorch checkpoint from {load_name}")
     elif load_type == "pl":
         if not load_name.endswith(".ckpt"):

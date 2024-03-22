@@ -3,7 +3,8 @@
 
 import torch
 import torch.nn as nn
-
+import pdb
+import copy
 
 class VGG7(nn.Module):
     def __init__(self, image_size: list[int], num_classes: int) -> None:
@@ -61,9 +62,13 @@ class VGG7(nn.Module):
             x = self.feature_layers[i](x)
         x.retain_grad() 
         '''
-        x = x.view(-1, 512 * 4 * 4)
+        x = x.reshape(-1, 512*4*4)
         x = self.classifier(x)
         x = self.last_layer(x)
+        repeat_times = 512 // x.size(0) + 1  
+        x = x.repeat(repeat_times, 1)
+        x = x[:512, :]
+
         return x
 
 

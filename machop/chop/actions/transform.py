@@ -37,9 +37,9 @@ logger = logging.getLogger(__name__)
 pp = pprint.PrettyPrinter(indent=4)
 
 
-def pre_transform_load(mask, is_quantize, load_name: str, load_type: str, model: torch.nn.Module):
+def pre_transform_load(model_short_name, mask, is_quantize, load_name: str, load_type: str, model: torch.nn.Module):
     if load_name is not None and load_type in ["pt", "pl"]:
-        model = load_model(mask, is_quantize, load_name=load_name, load_type=load_type, model=model)
+        model = load_model(model_short_name, mask, is_quantize, load_name=load_name, load_type=load_type, model=model)
         '''
         load_model is added with parameters of 'mask' and 'is_quantize';
         1. becuase after pruning, there should be a group of new keys in state_dict(), which is "mask"
@@ -73,11 +73,15 @@ def transform(
 
     load_name = config['passes']['retrain']['load_name']  
     load_type = config['passes']['retrain']['load_type']  # pt
+    model_short_name = config['model'];print(model_short_name)
+    dataset_short_name = config['dataset'];print(dataset_short_name)
 
     weight_mask = None
-    model = pre_transform_load(weight_mask, is_quantize, load_name=load_name, load_type=load_type, model=model)  # load the VGG_pretrained model
-    # the reason for 'weight_mask' and 'is_quantize' are given above
-    model.to(accelerator)
+    if "vgg" in model_short_name:
+        if "cifar" in dataset_short_name:
+            model = pre_transform_load(model_short_name, weight_mask, is_quantize, load_name=load_name, load_type=load_type, model=model)  # load the VGG_pretrained model
+            # the reason for 'weight_mask' and 'is_quantize' have been given above
+            model.to(accelerator)
 
     if "cf_args" not in config:
         cf_args = get_cf_args(model_info=model_info, task=task, model=model)
@@ -200,7 +204,7 @@ def transform(
                 )  
 
                 # calculate the pruning sparsity
-                graph, sparsity_info, act_masks = PASSES["add_pruning_metadata"](
+                graph, sparsity_info, weight_masks, act_masks = PASSES["add_pruning_metadata"](
                     graph,
                     {"dummy_in": dummy_in, "add_value": False}
                 )
@@ -274,13 +278,13 @@ def transform(
 
                 wrapper_cls = get_model_wrapper(model_info, task)
 
-                #load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt"
-                load_name = "/content/prune_mase/mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt"
+                load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt"
+                #load_name = "/content/prune_mase/mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt"
                 load_type = "pt"
                 
                 if load_name:
-                    mask_collect = None # weight_masks
-                    model = load_model(mask_collect, is_quantize, load_name, load_type=load_type, model=model)
+                    mask_collect = weight_masks # weight_masks
+                    model = load_model(model_short_name, mask_collect, is_quantize, load_name, load_type=load_type, model=model)
                     logger.info(f"'{load_type}' checkpoint loaded before training")
 
                 plt_trainer_args['accelerator'] = config['passes']['retrain']['trainer']['accelerator']
@@ -311,12 +315,11 @@ def transform(
                 logger.info(f"model is successfully fine-tuned and saved to {save_dir}/model.ckpt!")
 
             case "huffman":
-                layer_huffman_info = PASSES["huffman"](pl_model, cf_args, model_info, data_module, task, accelerator, huffman_pass_config)
-                decoded_weights = PASSES["huffman_decode"](layer_huffman_info) 
-                # save the model after huffman coding
-                save_dir = huffman_save_dir ; save_dir = Path(save_dir) ; save_dir.mkdir(parents=True, exist_ok=True)           
-                graph, _ = metadata_value_type_cast_transform_pass(graph, pass_args={"fn": to_numpy_if_tensor})
-                graph, _ = save_mase_graph_interface_pass(graph, pass_args=save_dir) 
+                is_huffman = config['passes']['huffman']['is_huffman']
+                if is_huffman:
+                    layer_huffman_info = PASSES["huffman"](pl_model, cf_args, model_info, data_module, task, accelerator, huffman_pass_config)
+                    # save layer_huffman_info here
+                    decoded_weights = PASSES["huffman_decode"](layer_huffman_info) 
 
             case "remove_prune_wrappers":
                 # Removes the pruning-related hooks and makes pruning permanent

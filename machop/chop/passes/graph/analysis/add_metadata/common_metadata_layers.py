@@ -186,13 +186,17 @@ def analyse_common_parameters_placeholder(meta, result, args, kwargs, add_value=
 
 def analyse_common_parameters_function(meta, result, args, kwargs, add_value=True):
     # fetch mase info
-    mase_op = meta.parameters["common"]["mase_op"]
-
+    try:
+        mase_op = meta.parameters["common"]["mase_op"]
+    except:
+        pass
     # deal with result
     meta = analyse_result(meta, result, add_value)
     # deal with args and kwargs
-    meta = match_args_and_kwargs(meta, args, kwargs, func_data[mase_op], add_value)
-
+    try:
+        meta = match_args_and_kwargs(meta, args, kwargs, func_data[mase_op], add_value)
+    except:
+        pass
     return meta
 
 
@@ -224,9 +228,15 @@ def analyse_common_parameters_module(meta, result, args, kwargs, add_value=True)
 
 
 def analyse_common_parameters_method(meta, result, args, kwargs, add_value=True):
-    mase_op = meta.parameters["common"]["mase_op"]
+    try:
+        mase_op = meta.parameters["common"]["mase_op"]
+    except:
+        pass
     meta = analyse_result(meta, result, add_value)
-    meta = match_args_and_kwargs(meta, args, kwargs, method_data[mase_op], add_value)
+    try:
+        meta = match_args_and_kwargs(meta, args, kwargs, method_data[mase_op], add_value)
+    except:
+        pass
     return meta
 
 

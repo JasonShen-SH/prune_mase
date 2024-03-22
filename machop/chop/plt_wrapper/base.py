@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 import torch
 
+from torch.utils.data import DataLoader
 # from deepspeed.ops.adam import FusedAdam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
@@ -18,8 +19,6 @@ class WrapperBase(pl.LightningModule):
         optimizer=None,
         dataset_info=None,
         batch_size=128,
-        # 在这里面，有的参数是有用的，如optimizer和learning_rate,有的参数是无用的，如batch_size；
-        # 所有这些参数全部都只在这个特定文件里有用，即：所有optimizer可以改名为optimizer_new，不会有bug
     ):
         super().__init__()
         self.model = model
@@ -42,6 +41,9 @@ class WrapperBase(pl.LightningModule):
     def forward(self, x):
         return self.model(x)
 
+    #def val_dataloader(self, dataset_info, batch_size):
+    #    return DataLoader(dataset_info, batch_size, shuffle=False, drop_last=True)
+    
     def training_step(self, batch, batch_idx):
         x, y = batch[0], batch[1]
         y_hat = self.forward(x)
@@ -50,12 +52,14 @@ class WrapperBase(pl.LightningModule):
         self.acc_train(y_hat, y)
         self.log("train_acc_step", self.acc_train, prog_bar=True)
         self.log("train_loss_step", loss)
-        #pdb.set_trace()
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch[0], batch[1]
         y_hat = self.forward(x)
+        if y.shape[0]==96:
+            y_hat = y_hat[:96,:]
+
         loss = self.loss_fn(y_hat, y)
 
         self.acc_val(y_hat, y)

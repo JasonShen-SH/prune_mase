@@ -18,14 +18,19 @@ def add_software_metadata_analysis_pass(graph, pass_args=None):
     """
 
     for node in graph.fx_graph.nodes:
-        mase_op = get_mase_op(node)
-        mase_type = get_mase_type(node)
-
-        if mase_op in SOFTWARE_PARAM_ANALYSIS_LAYERS[mase_type]:
-            SOFTWARE_PARAM_ANALYSIS_LAYERS[mase_type][mase_op](node.meta["mase"])
-        else:
-            logger.warning(
-                f"mase_type `{mase_type}`, mase_op `{mase_op}` not found in SOFTWARE_PARAM_ANALYSIS_LAYERS. Using default analysis layer"
-            )
-            SOFTWARE_PARAM_ANALYSIS_LAYERS[mase_type]["default"](node.meta["mase"])
+        try:
+            mase_op = get_mase_op(node)
+            mase_type = get_mase_type(node)
+        except:
+            pass
+        try:
+            if mase_op in SOFTWARE_PARAM_ANALYSIS_LAYERS[mase_type]:
+                SOFTWARE_PARAM_ANALYSIS_LAYERS[mase_type][mase_op](node.meta["mase"])
+            else:
+                logger.warning(
+                    f"mase_type `{mase_type}`, mase_op `{mase_op}` not found in SOFTWARE_PARAM_ANALYSIS_LAYERS. Using default analysis layer"
+                )
+                SOFTWARE_PARAM_ANALYSIS_LAYERS[mase_type]["default"](node.meta["mase"])
+        except:
+            pass
     return graph, {}

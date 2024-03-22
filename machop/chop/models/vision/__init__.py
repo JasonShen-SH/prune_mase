@@ -370,7 +370,7 @@ VISION_MODELS = {
         "get_model_fn_image_classification": get_vgg7,
         "info": MaseModelInfo(
             "vgg7", model_source="vision_others", task_type="vision", image_classification=True
-        )
+        ),
     }
 }
 # fmt: on
