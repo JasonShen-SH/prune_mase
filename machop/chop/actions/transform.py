@@ -200,7 +200,7 @@ def transform(
                 )  
 
                 # calculate the pruning sparsity
-                graph, sparsity_info, act_masks = PASSES["add_pruning_metadata"](
+                graph, sparsity_info, weight_masks, act_masks = PASSES["add_pruning_metadata"](
                     graph,
                     {"dummy_in": dummy_in, "add_value": False}
                 )
@@ -209,11 +209,14 @@ def transform(
                 # activation pruning is of dynamic pruning, where the activation mask for each input batch )iteration) will be updated
 
                 # if we want to force activation pruning to be static, we could run the following two lines to save activation masks
-                #torch.save(act_masks, "/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks.pth")
+                #torch.save(act_masks, "act_masks.pth")
                 #print("activation mask saved")
                 
                 pp.pprint(sparsity_info)
                 del act_masks # reduce memory
+                
+                # calculate model size and FLOP
+                pdb.set_trace()
 
                 # save the pruned model
                 save_dir = prune_save_dir ; save_dir = Path(save_dir) ; save_dir.mkdir(parents=True, exist_ok=True)           
@@ -274,12 +277,11 @@ def transform(
 
                 wrapper_cls = get_model_wrapper(model_info, task)
 
-                #load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt"
-                load_name = "/content/prune_mase/mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt"
+                load_name = "../mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt"
                 load_type = "pt"
                 
                 if load_name:
-                    mask_collect = None # weight_masks
+                    mask_collect = weight_masks
                     model = load_model(mask_collect, is_quantize, load_name, load_type=load_type, model=model)
                     logger.info(f"'{load_type}' checkpoint loaded before training")
 
@@ -311,12 +313,10 @@ def transform(
                 logger.info(f"model is successfully fine-tuned and saved to {save_dir}/model.ckpt!")
 
             case "huffman":
-                layer_huffman_info = PASSES["huffman"](pl_model, cf_args, model_info, data_module, task, accelerator, huffman_pass_config)
-                decoded_weights = PASSES["huffman_decode"](layer_huffman_info) 
-                # save the model after huffman coding
-                save_dir = huffman_save_dir ; save_dir = Path(save_dir) ; save_dir.mkdir(parents=True, exist_ok=True)           
-                graph, _ = metadata_value_type_cast_transform_pass(graph, pass_args={"fn": to_numpy_if_tensor})
-                graph, _ = save_mase_graph_interface_pass(graph, pass_args=save_dir) 
+                is_huffman = config['passes']['huffman']
+                if is_huffman:
+                    layer_huffman_info = PASSES["huffman"](pl_model, cf_args, model_info, data_module, task, accelerator, huffman_pass_config)
+                    decoded_weights = PASSES["huffman_decode"](layer_huffman_info) 
 
             case "remove_prune_wrappers":
                 # Removes the pruning-related hooks and makes pruning permanent

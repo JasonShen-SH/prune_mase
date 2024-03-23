@@ -57,7 +57,6 @@ class WrapperBase(pl.LightningModule):
         x, y = batch[0], batch[1]
         y_hat = self.forward(x)
         loss = self.loss_fn(y_hat, y)
-
         self.acc_val(y_hat, y)
         self.loss_val(loss)
         return loss
