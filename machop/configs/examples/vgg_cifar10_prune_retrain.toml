@@ -6,7 +6,7 @@ dataset = "cifar10"
 task = "cls"
 
 batch_size = 512
-accelerator = "gpu"
+accelerator = "cpu"
 project = "vgg_cifar10_prune"
 seed = 42
 log_every_n_steps = 50 
@@ -16,10 +16,10 @@ learning_rate = 1e-4
 #prune
 ##########################
 [passes.prune.weight]
-sparsity = 0.2  # change it to 0.5, 0.8  
+sparsity = 0.2
 scope = "local"
-granularity = "channelwise"
-method = "l1-norm-single"
+granularity = "kernelwise"
+method = "l1-norm"
 
 [passes.prune.activation]
 sparsity = 0.0
@@ -53,28 +53,26 @@ name = "integer"
 "bias_frac_width" = 4
 
 ##########################
-# huffman
-##########################
-[passes.huffman]
-is_huffman = true
-
-##########################
 #retrain
 ##########################
-[retrain]
-# load_name = "/mnt/d/imperial/second_term/adls/projects/mase/mase_output/vgg_cifar10_prune/software/prune/transformed_ckpt/state_dict.pt"
-# load_name = "/mnt/d/imperial/second_term/adls/mase/test-accu-0.9332.ckpt"
-load_name = "/content/drive/MyDrive/test-accu-0.9332.ckpt"
+[passes.retrain]
+load_name = "/mnt/d/imperial/second_term/adls/mase/test-accu-0.9332.ckpt"
 load_type = "pl"
 project = "vgg_cifar10_train"
 
-[retrain.training]
-max_epochs = 10
+[passes.retrain.training]
+max_epochs = 1
 weight_decay = 0
 optimizer = "adam"
 learning_rate = 1e-4
 batch_size = 512
 
-[retrain.trainer]
+[passes.retrain.trainer]
 devices = 1
-accelerator = "gpu"
+accelerator = "cpu"
+
+##########################
+# huffman
+##########################
+[passes.huffman]
+is_huffman = true

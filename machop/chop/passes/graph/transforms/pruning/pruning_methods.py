@@ -177,12 +177,9 @@ def channel_l2_weight(tensor: torch.Tensor, next_tensor: torch.Tensor, info: dic
     return mask
 
 
-
-## 1.2: gradient-based
-
-
 # 2. activation outputs 
-## 2.1: focus on each single activation element
+## 2.1: focus on neurons
+### 2.1.1: magnitude-based
 def activation_l1(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     flat_tensor = tensor.abs().flatten()
     try:
@@ -202,9 +199,10 @@ def activation_l2(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Te
     mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
     return mask
 
-## 2.2: focus on neurons
-### 2.2.1: magnitude-based
-def activation_l1_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+
+## 2.2: focus on feature maps (magnitude-based)
+### 2.2.1 magnitude-based
+def activation_l1_feature_map(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     l1_norms = tensor.abs().sum(dim=(0,2,3)) # e.g: 3*(512*32*32)
     flattened_l1_norms = l1_norms.flatten()
     try:
@@ -217,7 +215,7 @@ def activation_l1_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> t
     mask = mask.to(torch.bool).to(tensor.device)
     return mask
 
-def activation_l2_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+def activation_l2_feature_map(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     l2_norms = tensor.abs().sum(dim=(0,2,3)) # e.g: 3*(512*32*32)
     flattened_l2_norms = l2_norms.flatten()
     try:
@@ -230,32 +228,39 @@ def activation_l2_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> t
     mask = mask.to(torch.bool).to(tensor.device)
     return mask
 
-### 2.2.2: similarity-based
-def channel_similarity_neuron(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
+
+### 2.2.2 similarity-based
+def channel_similarity_feature_map(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     # tensor: n(i)*n(i-1)*k*k
-    flat_tensor = tensor.reshape(tensor.shape[1],-1)  # e.g: 3*(512*32*32)
+    flat_tensor = tensor.reshape(tensor.shape[1], -1)  # e.g: 3*(512*32*32)
     # normalization
     norms = torch.norm(flat_tensor, dim=1, keepdim=True)
     normalized_tensor = flat_tensor / norms
     cosine_similarity_matrix = torch.mm(normalized_tensor, normalized_tensor.t())  # cosine similarity
-    similarity_threshold = 0.1
-    similar_pairs = torch.where(cosine_similarity_matrix > similarity_threshold)
-    # convert the indices of similar pairs into lists and remove self-similar cases (diagonal elements)
-    similar_pairs = list(zip(similar_pairs[0].tolist(), similar_pairs[1].tolist()))
-    similar_pairs = [pair for pair in similar_pairs if pair[0] != pair[1]]
-    # Select the neurons' index to remove, Here we select the neurons with the larger index in each pair
-    indices_to_remove = set(pair[1] for pair in similar_pairs)
-    #if len(indices_to_remove) > 0.1 * cosine_similarity_matrix.size(0):
-        #print("Warning: Removing more than expected. Consider adjusting the threshold or removal strategy.")
-    # final neuron index to remove
-    indices_to_remove = sorted(indices_to_remove)[:int(0.1 * cosine_similarity_matrix.size(0))]
-    #print("sparsity of this layer: ", len(indices_to_remove) / tensor.shape[1])
+    # Get the upper triangular part of the cosine similarity matrix, excluding the diagonal
+    triu_indices = torch.triu_indices(cosine_similarity_matrix.size(0), cosine_similarity_matrix.size(1), offset=1)
+    similarities = cosine_similarity_matrix[triu_indices[0], triu_indices[1]]
+    # Pair each similarity score with its index
+    pair_indices = list(zip(triu_indices[0].tolist(), triu_indices[1].tolist()))
+    indexed_similarities = list(zip(similarities.tolist(), pair_indices))
+    # Sort by similarity
+    indexed_similarities.sort(reverse=True)
+    # Determine the number of pairs to remove based on sparsity
+    num_pairs_to_remove = int(sparsity * len(indexed_similarities))
+    # Select indices to remove
+    indices_to_remove = set()
+    for _, (i, j) in indexed_similarities[:num_pairs_to_remove]:
+        # Arbitrarily choose one of the pair to remove, here we choose the second
+        indices_to_remove.add(j)
+    indices_to_remove = sorted(indices_to_remove)
+    # Create a mask
     mask = torch.ones(cosine_similarity_matrix.size(0), dtype=torch.bool)
-    mask[indices_to_remove] = False
+    mask[list(indices_to_remove)] = False
     mask = mask.view(1, tensor.shape[1], 1, 1)
     mask = mask.expand(tensor.shape[0], -1, tensor.shape[2], tensor.shape[3])
-    mask = mask.to(torch.bool).to(tensor.device)
+    mask = mask.to(tensor.device)
     return mask
+
 
 ## EXTRA: global
 ## We haven't implemented too many as they are basically the same as local methods.
@@ -286,8 +291,6 @@ def global_activation_l1(tensor: torch.Tensor, info: dict, sparsity: float):
     return mask
 
 
-
-# for each configuration, try sparsity = 0.2, 0.5, 0.8 repsectively
 weight_criteria_map = {
     "local": {
         "elementwise": {
@@ -310,7 +313,7 @@ activation_criteria_map = {
             "l1-norm": activation_l1, "l2-norm": activation_l2
         },
         "channelwise": {
-            "neuron-l1-norm": activation_l1_neuron, "neuron-l2-norm": activation_l2_neuron, "neuron-similarity": channel_similarity_neuron
+            "feature-map-l1-norm": activation_l1_feature_map, "feature-map-l2-norm": activation_l2_feature_map, "feature-map-similarity": channel_similarity_feature_map
         }
     },
     "global": {

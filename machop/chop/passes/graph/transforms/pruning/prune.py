@@ -40,11 +40,6 @@ def get_weight_hook(name, info, named_info, w_config: dict):
     parameterization = FakeSparseWeight(w_rank_fn(value, info, w_sparsity)) # [tensor, info, sparsity]
     return (register_parameter_name, parameterization)
 
-# activation pruning 到底是怎么做的，mask怎么看
-# 现在看来，activation的sparsity之所以那么高，更多是来自于它自身的问题，而非weights，因为即使去掉weight pruning, activation的sparsity虽然有所下降，但是下降极其微小
-# FakeSparseWeight 增加全局变量参数real_mask
-# weight pruning 因为我们在retrain之前，往模型里面导入了mask_collect,导致模型对于每一个input_batch的mask都是一样的
-
 
 def get_weight_hook_channel(name, info, named_info, next_named_info, w_config: dict):
     # register parameterization
@@ -62,7 +57,7 @@ def get_weight_hook_channel(name, info, named_info, next_named_info, w_config: d
 
 def get_activation_hook(name, info, named_info, batch_size, a_config: dict):
     a_rank_fn = get_activation_rank_fn(a_config)
-    a_sparsity = named_info["activation_sparsity"]  # 始终是0.1
+    a_sparsity = named_info["activation_sparsity"]  
 
     value = named_info["value"]
     register_parameter_name = "register_forward_pre_hook"
@@ -83,19 +78,16 @@ def get_activation_hook(name, info, named_info, batch_size, a_config: dict):
                 f"{module.__class__.__name__} takes more than 1 argument at inference, the current sparsiy_input pre forward hook only allows one!"
             )
         x = args[0]
-        mask = a_rank_fn(x, info, a_sparsity)   # 问题所在
+        mask = a_rank_fn(x, info, a_sparsity)   
         module.activation_mask = mask
         
-        #prune_count=0
         if not has_finished_prune:
-            #pdb.set_trace()
             prune_count+=1
             if prune_count >= 6:
                 has_finished_prune = True
-                #print("yes")
         else:
             try:
-                act_masks = torch.load("/mnt/d/imperial/second_term/adls/projects/mase/machop/act_masks2.pth")
+                act_masks = torch.load("act_masks.pth")
                 if x.shape == (batch_size, 3, 32, 32):
                     mask = act_masks[0]
                 elif x.shape == (batch_size,128,32,32):
@@ -322,40 +314,28 @@ def prune_graph_iterator(graph, batch_size, config: dict):
     else:
         # hook building
         hooks = build_pruning_hooks(info, w_config, a_config, batch_size)
-        # building_pruning_blocks确实是对于一切有weights和activations记录在案的module，都会执行prune；
-        # 但是关键是记录的过程是由fetch_info完成的，fetch_info只对conv2d和linear做prune
-        # (就是bulding_pruning_hooks是对info内的modules处理的，而info的记录过程在fetch_info内，fetch_info要求只对于conv2d和linear记录info)
 
     print("finish building hooks!")
 
     # prune in second loop by applying hooks to relevant modules
-    #if w_config['method'] != 'channel_l1_weight':
     for node in graph.fx_graph.nodes:
         # pruning only deals with modules at the moment
         if node.op == "call_module":
             module = graph.modules[node.target]
-            if isinstance(module, torch.nn.Conv2d): # 必须是conv2d
+            if isinstance(module, torch.nn.Conv2d): 
                 name = node.target
                 if name in hooks.keys():
                     node_hooks = hooks[name]
-                    # check weight hook, if it exits, apply it
                     if node_hooks["w_hook"] is not None:
                         register_name, parameterization = node_hooks["w_hook"]
                         # apply weight pruning
                         torch.nn.utils.parametrize.register_parametrization(
                             graph.modules[node.target], register_name, parameterization
                         )
-                    '''
                     if node_hooks["a_hook"] is not None:
                         register_fn, hook_fn = node_hooks["a_hook"]
-                        #pdb.set_trace()
-                        #register_name, parameterization = node_hooks["a_hook"]
                         # apply activation pruning
                         getattr(graph.modules[node.target], register_fn)(hook_fn)
-                        #torch.nn.utils.parametrize.register_parametrization(
-                        #    graph.modules[node.target], register_name, parameterization
-                        #)
-                    '''
     return graph
 
 

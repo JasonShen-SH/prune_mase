@@ -102,7 +102,8 @@ def huffman_transform_pass(
             layer_huffman_info[layer_name]['huffman_tree'] = huffman_tree
             layer_huffman_info[layer_name]['shape'] = list(weight_tensor.shape)
 
-    print("huffman used bits: ", huffman_size_bits)
+    huffman_size_bytes = huffman_size_bits/8
+    print("huffman used bytes: ", huffman_size_bytes)
 
     # dict: layer_huffman_info
     with open('chop/huffman_info.pkl', 'wb') as f:
