@@ -391,7 +391,6 @@ def transform(
                 trainer = pl.Trainer(
                     **plt_trainer_args, 
                     max_epochs=config['passes']['retrain']['training']['max_epochs'], 
-                    limit_train_batches=1,
                 )
 
                 trainer.fit(

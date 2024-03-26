@@ -28,7 +28,7 @@ def random(tensor: torch.Tensor, info: dict, sparsity: float) -> torch.Tensor:
     return mask
 
 def handle_large_input_data(flat_tensor: torch.Tensor, sparsity: float):
-    print(f"the input tensor is {flat_tensor.shape} and is divided into small batches")
+    #print(f"the input tensor is {flat_tensor.shape} and is divided into small batches")
     batch_unit = int(1e6)
     num_batches = (flat_tensor.size(0) + batch_unit - 1) // batch_unit
     quantiles = []
@@ -270,7 +270,17 @@ def global_weight_l1(tensor: torch.Tensor, info: dict, sparsity: float):
     tensors = [v["weight_value"] for _, v in info.items() if v is not None]
     flattened_tensors = [tensor.abs().flatten() for tensor in tensors]
     flattened_tensors = torch.cat(flattened_tensors)
-    # flattened_tensors = tensors.abs().flatten()
+    try:
+        threshold = torch.quantile(flattened_tensors, sparsity)
+    except RuntimeError as e:
+        threshold = handle_large_input_data(flattened_tensors, sparsity)
+    mask = (tensor.abs() > threshold).to(torch.bool).to(tensor.device)
+    return mask
+
+def global_weight_l1(tensor: torch.Tensor, info: dict, sparsity: float):
+    tensors = [v["weight_value"] for _, v in info.items() if v is not None]
+    flattened_tensors = [tensor.abs().flatten() for tensor in tensors]
+    flattened_tensors = torch.cat(flattened_tensors)
     try:
         threshold = torch.quantile(flattened_tensors, sparsity)
     except RuntimeError as e:

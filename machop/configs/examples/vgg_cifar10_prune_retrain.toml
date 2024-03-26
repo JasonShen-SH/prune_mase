@@ -18,11 +18,11 @@ learning_rate = 1e-4
 [passes.prune.weight]
 sparsity = 0.2
 scope = "local"
-granularity = "kernelwise"
+granularity = "elementwise"
 method = "l1-norm"
 
 [passes.prune.activation]
-sparsity = 0.0
+sparsity = 0.1
 scope = "local"
 granularity = "elementwise"
 method = "l1-norm"
