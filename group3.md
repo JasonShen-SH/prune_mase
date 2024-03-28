@@ -42,7 +42,8 @@ Additionally, inspired by the methodology from[DEEP COMPRESSION: COMPRESSING DEE
 
 By default, these two further model compression techniques are enabled, but you can choose to disable them in the config.
 
-
+&nbsp;
+&nbsp;
 
 By default, the model loads the pre-trained VGG7 model for pruning and training. If desired, you can opt to train from scratch by setting <code>load_name = None</code>.
 
