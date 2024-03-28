@@ -23,7 +23,7 @@ python test/passes/graph/transforms/prune/test_group3.py
 
 You can also execute the transform function via the command line using 
 ```yaml
-./ch transform --config configs/examples/vgg_cifar10_prune_retrain.toml
+./ch transform --config configs/examples/group3.toml
 ```
 
 You will be able to see training results, as well as 许多评估指标，如
