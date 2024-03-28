@@ -75,7 +75,7 @@ huffman used bytes:  1344395.25
 INFO     Transformation is completed
 ```
 
-Following pruning, the model size and the number of Conv2d parameters are precisely reduced to 20% of their original sizes, while the reduction in the number of Conv2d FLOPs can even far exceed 10%. This is attributed to the fact that setting weights to zero results in more zeroed activation outputs per layer, sometimes exceed the sparsity.
+Following pruning, the <code>model size</code> and the <code>number of Conv2d parameters</code> are precisely reduced to <code>20%</code> of their original sizes, while the reduction in the <code>number of Conv2d FLOPs</code> can even far exceed 10%. This is attributed to the fact that setting weights to zero results in more zeroed activation outputs per layer, sometimes exceed the sparsity.
 
 Furthermore, Post-prune Quantization meticulously reduces the model size to a quarter of its original size, as each parameter is stored using 8 bits instead of the initial 32 bits (float32) 
 
