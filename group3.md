@@ -47,7 +47,8 @@ By default, these two further model compression techniques are enabled, but you 
 
 &nbsp;&nbsp;
 
-By default, the model loads the **pre-trained VGG7 model** for pruning and training. If desired, you can opt to **train from scratch** by setting <code>load_name = None</code>.
+By default, the model loads the **pre-trained VGG7 model** for pruning and training.
+If desired, you can opt to **train from scratch** by setting <code>load_name = None</code>.
 
 Moreover, you are free to select different datasets and models. The **ResNet18** network and **colored-MNIST** are fully compatible with our pipeline and yield satisfactory results. To utilize these, please modify the toml configuration as follows:
 ```yaml
