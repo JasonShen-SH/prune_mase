@@ -1,4 +1,4 @@
-# Pruning and Training for MASE - Group 3 - Ruiqi Shen, Zhiyu Ma, Yann Bilien
+# Pruning and Training for MASE - Group 3 
 
 # Functionality 
 ## Basic Elements:
