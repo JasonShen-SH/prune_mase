@@ -96,7 +96,9 @@ Note: Actual model size reduction on hardware requires compiler-level modificati
 
 
 
-# Implementation Details
+# Implementation Overview
+
+Please refer to the **Methodology part of the report** for detailed illustration and visualization.
 
 ## Overall Pipeline
 
@@ -114,10 +116,18 @@ Weight pruning:
 
 <img src="imgs/weight_wise.png" width=500>
 
+Different granualarities of weight pruning:
+
+<img src="imgs/weight_wise.png" width=500>
+
 
 Activation pruning:
 
 <img src="imgs/activation_pruning.png" width=500>
+
+Different focus of activation pruning:
+
+<img src="imgs/weight_wise.png" width=500>
 
 Please refer to <code>pruning_methods.py</code> for their specifc names. 
 
@@ -128,6 +138,11 @@ For the detailed analysis on their principles and performance, as well as the mu
 ## Post-prune Quantization & Huffman Coding
 
 Additionally, inspired by the methodology from[DEEP COMPRESSION: COMPRESSING DEEP NEURAL NETWORKS WITH PRUNING, TRAINED QUANTIZATION AND HUFFMAN CODING](https://arxiv.org/pdf/1510.00149.pdf), we've implemented **post-prune quantization** and **Huffman Coding**. 
+
+The post-prune quantization convert the 32-bit float data into an 8-bit format with 4 bits allocated for the fractional part.
+
+
+
 
 By default, these two further model compression techniques are enabled, but you can choose to disable them by commenting <code>passes.quantize</code> and set <code>is_huffman = false</code>
 
@@ -150,6 +165,7 @@ dataset = "mnist"  # colored-MNIST
 &nbsp;&nbsp;
 
 
+Note that we save the model after each pass (prune, quantization, train, 
 
 
 ## Contact
