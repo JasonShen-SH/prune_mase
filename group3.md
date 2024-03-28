@@ -1,4 +1,4 @@
-# Pruning and Training for MASE - Group 3
+# Pruning and Training for MASE - Group 3 - Ruiqi Shen, Zhiyu Ma, Yann Bilien
 
 ## Overall Pipeline
 
@@ -30,7 +30,7 @@ You can also execute the transform function via the command line using
 
 You might change configuration as you wish. 
 
-As there are too many configurations, we kept them inside toml file at <code>configs/example/prune_retrain_group3.toml</code>
+As there are too many configurations, we kept them inside a toml file at <code>configs/example/prune_retrain_group3.toml</code>
 Please refer to the file for default parameter values and to change them.
 
 Below is a demonstration of an actual output under certain pruning prerequisites:
@@ -65,14 +65,25 @@ INFO     model is successfully quantized and saved
 
 # Fine-tuning:
 INFO     Loaded pytorch checkpoint from ../mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt
-Epoch 0:   1%|▍                                              | 1/98 [00:27<44:02,  0.04it/s, v_num=0, train_acc_step=0.885]
+Epoch 0: 100% 98/98 [00:43<00:00,  2.28it/s, v_num=0, train_acc_step=0.878]
 # continue to train ......
+Epoch 9: 100% 98/98 [00:47<00:00,  2.08it/s, v_num=0, train_acc_step=0.875, val_acc_epoch=0.934, val_loss_epoch=0.216]
 
 # Huffman coding
 huffman used bytes:  1344395.25
 
 INFO     Transformation is completed
 ```
+
+Following pruning, the model size and the number of Conv2d parameters are precisely reduced to 20% of their original sizes, while the reduction in the number of Conv2d FLOPs can even far exceed 10%. This is attributed to the fact that setting weights to zero results in more zeroed activation outputs per layer, sometimes exceed the sparsity.
+
+Furthermore, Post-prune Quantization meticulously reduces the model size to a quarter of its original size, as each parameter is stored using 8 bits instead of the initial 32 bits (float32) 
+
+Subsequently, after Huffman Coding, the model size can be further reduced to 36.7% of its size post-quantization, achieving significant model compression.
+
+Simultaneously, the model can reach a validation accuracy of 93.34% after 10 rounds of fine-tuning, which is slightly higher than the 93.32% validation accuracy of the pre-trained model. Thus, pruning can maintain performance while significantly compressing the model.
+
+(Note: Actual model size reduction on hardware necessitates compiler-level changes, these strategies are calculated theoretically and still mark a significant step forward as model could be drastically reduced once compiler is adjusted accordingly. Please refer to the report for detailed discussion)
 
 
 &nbsp;&nbsp;
@@ -92,7 +103,7 @@ Activation pruning:
 
 Please refer to <code>pruning_methods.py</code> for their specifc names. 
 
-For the detailed analysis on their principles and performance, as well as the multiple evaluating metrics, please refer to the report.
+For the detailed analysis on their principles and performance, as well as the multiple evaluating metrics, please refer to the **report**.
 
 &nbsp;&nbsp;
 
@@ -120,8 +131,15 @@ dataset = "mnist"  # colored-MNIST
 
 &nbsp;&nbsp;
 
+
+## Implementation Details:
+
+
+
+
+
 ## Contact
 
-Feel free to contact us at ruiqi.shen23@imperial.ac.uk if you have any encountered problems.
+Feel free to contact us at ruiqi.shen23@imperial.ac.uk if you have encountered any problems.
 
 
