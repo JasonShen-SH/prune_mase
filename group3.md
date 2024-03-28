@@ -2,9 +2,9 @@
 
 ## Overall Pipeline
 
-It mainly consists of four parts: **pruning, quantization, training, and Huffman Coding**. 
+It mainly consists of four parts: **Pruning, Quantization, Training, and Huffman Coding**. 
 
-Each part is implemented by an independent pass in the transform, you can flexibly select and combine passes as needed.
+Each part is implemented by an independent pass within <code>transform.py</code>, you can flexibly select and combine passes as needed.
 
 The following is our pipeline:
 
