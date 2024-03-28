@@ -79,7 +79,7 @@ INFO     Transformation is completed
 |--------------------------------------------|------------------|---------------------------------------------------------------------------------|
 | **Model Size Reduction**                   |                  |                                                                                 |
 | After Pruning                              | 20%              | Model size and Conv2d parameters reduced to 20% of original sizes.              |
-| After Quantization                         | 5% (20% * 25%)   | Further reduced to a quarter of its original size with 8-bit storage.           |
+| After Post-Prune Quantization              | 5% (20% * 25%)   | Further reduced to a quarter of its original size with 8-bit storage.           |
 | After Huffman Coding                       | 1.8% (5% * 36.7%)| Further reduced to 36.7% of its post-quantization size.                         |
 | **Conv2d Parameters & FLOPs Reduction**    |                  |                                                                                 |
 | Number of Conv2d Parameters (Pruning)      | 20%              | Precisely reduced to 20% of their original sizes.                               |
