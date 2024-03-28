@@ -135,14 +135,20 @@ For the detailed analysis on their principles and performance, as well as the mu
 
 &nbsp;&nbsp;
 
+## Training
+
+We use PyTorch Lightning for model training. 
+
+The model is constructed with the specified architecture and loaded with pre-pruned weights.
+
 ## Post-prune Quantization & Huffman Coding
 
 Additionally, inspired by the methodology from[DEEP COMPRESSION: COMPRESSING DEEP NEURAL NETWORKS WITH PRUNING, TRAINED QUANTIZATION AND HUFFMAN CODING](https://arxiv.org/pdf/1510.00149.pdf), we've implemented **post-prune quantization** and **Huffman Coding**. 
 
 The post-prune quantization convert the 32-bit float data into an 8-bit format with 4 bits allocated for the fractional part.
 
-
-
+Huffman Encoding takes the advantage of the newly quantized data, it uses variable-length encoding to encode more common weight values with shorter bits,
+effectively compressing the model further.
 
 By default, these two further model compression techniques are enabled, but you can choose to disable them by commenting <code>passes.quantize</code> and set <code>is_huffman = false</code>
 
