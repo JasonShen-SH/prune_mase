@@ -28,12 +28,50 @@ You can also execute the transform function via the command line using
 ./ch transform --config configs/examples/group3.toml
 ```
 
-You will be able to see training results, as well as 许多评估指标，如
-
 You might change configuration as you wish. 
 
 As there are too many configurations, we kept them inside toml file at <code>configs/example/prune_retrain_group3.toml</code>
 Please refer to the file for default parameter values and to change them.
+
+一个实际输出的例子：
+```yaml
+# Pruning:
+pass_config:
+{'weight': {'sparsity': 0.2, 'scope': 'local', 'granularity': 'elementwise', 'method': 'l1-norm'}, 'activation': {'sparsity': 0.1, 'scope': 'local', 'granularity': 'elementwise', 'method': 'l1-norm'}}
+-------------------------------------
+number of Conv2d parameters before pruning:  4576384
+model size before pruning:  18320936.0
+flop of Conv2d layers before pruning:  1215037440
+-------------------------------------
+number of Conv2d parameters after pruning:  3659670
+model size after pruning:  14661248.0
+flop of Conv2d layers after pruning:  541312576
+-------------------------------------
+reduced percentage of Conv2d parameters:  0.20031404707297285
+reduced percentage of model size:  0.19975442302729507
+reduced percentage of Conv2d flops:  0.5544889744302859
+-------------------------------------
+INFO     model is successfully pruned and saved!
+
+# Quantization:
+There is quantization at feature_layers_0, mase_op: conv2d
+There is quantization at feature_layers_3, mase_op: conv2d
+There is quantization at feature_layers_7, mase_op: conv2d
+There is quantization at feature_layers_10, mase_op: conv2d
+There is quantization at feature_layers_14, mase_op: conv2d
+There is quantization at feature_layers_17, mase_op: conv2d
+model size after quantization:  3665312.0
+INFO     model is successfully quantized and saved
+
+# Fine-tuning:
+INFO     Loaded pytorch checkpoint from ../mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt
+Epoch 0:   1%|▍                                              | 1/98 [00:27<44:02,  0.04it/s, v_num=0, train_acc_step=0.885]
+
+# Huffman coding
+huffman used bytes:  1344395.25
+INFO     Transformation is completed
+```
+
 
 &nbsp;&nbsp;
 
