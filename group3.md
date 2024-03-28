@@ -118,7 +118,7 @@ Weight pruning:
 
 Different granualarities of weight pruning:
 
-<img src="imgs/weight_wise.png" width=500>
+<img src="imgs/wise.png" width=500>
 
 
 Activation pruning:
@@ -127,7 +127,7 @@ Activation pruning:
 
 Different focus of activation pruning:
 
-<img src="imgs/weight_wise.png" width=500>
+<img src="imgs/wise2.png" width=500>
 
 Please refer to <code>pruning_methods.py</code> for their specifc names. 
 
