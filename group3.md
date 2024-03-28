@@ -63,4 +63,6 @@ dataset = "mnist"  # colored-MNIST
 ```
 
 
+Feel free to contact us at ruiqi.shen23@imperial.ac.uk if you have any encountered problems.
+
 
