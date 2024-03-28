@@ -1,4 +1,4 @@
-We have developed a "trainable" pruning pipeline which could automatically prunes and compresses the network, while achieving comparable performance after training.
+## Overall Pipeline
 
 It mainly consists of four parts: **pruning, quantization, training, and Huffman Coding**. 
 
