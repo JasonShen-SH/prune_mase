@@ -1,4 +1,4 @@
-# Pruning and Training for MASE
+# Pruning and Training for MASE - Group 3
 
 ## Overall Pipeline
 
