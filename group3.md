@@ -33,7 +33,7 @@ You might change configuration as you wish.
 As there are too many configurations, we kept them inside toml file at <code>configs/example/prune_retrain_group3.toml</code>
 Please refer to the file for default parameter values and to change them.
 
-一个实际输出的例子：
+Below is a demonstration of an actual output:
 ```yaml
 # Pruning:
 pass_config:
