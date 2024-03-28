@@ -141,6 +141,8 @@ We use PyTorch Lightning for model training.
 
 The model is constructed with the specified architecture and loaded with pre-pruned weights.
 
+&nbsp;&nbsp;
+
 ## Post-prune Quantization & Huffman Coding
 
 Additionally, inspired by the methodology from[DEEP COMPRESSION: COMPRESSING DEEP NEURAL NETWORKS WITH PRUNING, TRAINED QUANTIZATION AND HUFFMAN CODING](https://arxiv.org/pdf/1510.00149.pdf), we've implemented **post-prune quantization** and **Huffman Coding**. 
