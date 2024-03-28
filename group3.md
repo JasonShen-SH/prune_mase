@@ -4,12 +4,11 @@ It mainly consists of four parts: **pruning, quantization, training, and Huffman
 
 Each part is implemented by an independent pass in the transform, you can flexibly select and combine passes as needed.
 
-&nbsp;&nbsp;
-
 The following is our pipeline:
 
 <img src="imgs/overall_pipeline.png" width=800>
 
+&nbsp;&nbsp;
 
 Please execute all of our programs in the **machop(i.e."mase/machop")** directory.
 
