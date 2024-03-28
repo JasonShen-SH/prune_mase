@@ -97,7 +97,9 @@ Note: Actual model size reduction on hardware requires compiler-level modificati
 
 ## Model Storage
 
-Note that we save the model after prune, quantization, and train.
+Note that we save the model for all passes.
+
+For prune, quantization, train:
 
 If you run the test, find the saved models at:
 <code>mase_output/group3_test</code>
@@ -105,6 +107,10 @@ If you run the test, find the saved models at:
 Or if you run the transform command, find the saved models at:
 <code>mase_output/{project}/software/transforms</code>
 
+For Huffman encoding, find the saved model at:
+ <code>machop/chop/huffman_model.ckpt</code>
+
+&nbsp;
 
 # Implementation Overview
 
