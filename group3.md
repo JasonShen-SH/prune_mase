@@ -84,8 +84,8 @@ INFO     Transformation is completed
 | After Post-Prune Quantization              | 20% (80% * 25%)           | Further reduced to a quarter of its original size with 8-bit storage.           |
 | After Huffman Encoding                     | 7.34% (20% * 36.7%)       | Further reduced to 36.7% of its post-quantization size.                         |
 | **Number of Conv2d Parameters & FLOPs Reduction**    |                 |                                                                                 |
-| Number of Conv2d Parameters (Pruning)      | 20%                       | Precisely reduced to 20% of their original sizes.                               |
-| Number of Conv2d FLOPs (Pruning)           | >10%                      | Reduction can far exceed 10%, due to zeroed weights.                            |
+| Conv2d Parameters (Pruning)      | 20%                       | Precisely reduced to 20% of their original sizes.                               |
+| Conv2d FLOPs (Pruning)           | >10%                      | Reduction can far exceed 10%, due to zeroed weights.                            |
 | **Validation Accuracy**                    |                           |                                                                                 |
 | Post Fine-Tuning                           | 93.34%                    | Slightly higher than the pre-trained model's 93.32% validation accuracy.        |
 
