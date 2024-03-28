@@ -32,12 +32,12 @@ Specifically, below are all the pruning methods that we've implemented:
 
 weight pruning:
 
-<img src="imgs/weight_wise.png" width=600>
+<img src="imgs/weight_wise.png" width=500>
 
 
 Activation pruning:
 
-<img src="imgs/activation_pruning.png" width=600>
+<img src="imgs/activation_pruning.png" width=500>
 
 Please refer to **pruning_methods.py** for their specifc names. For the detailed analysis on their principles and performance, please refer to the report.
 
