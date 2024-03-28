@@ -2,11 +2,13 @@
 
 ## Overall Pipeline
 
-It mainly consists of four parts: **Pruning, Quantization, Training, and Huffman Coding**. 
+Our project has developed a ”trainable” pruning method which could automatically prunes and compresses the network, while achieving comparable performance after training.
 
-Each part is implemented by an independent pass within <code>transform.py</code>, you can flexibly select and combine passes as needed.
+The architecture of our framework is segmented into four key components: **Pruning, Quantization, Training, and Huffman Coding**。
 
-The following is our pipeline:
+Each component is executed through an autonomous pass within <code>transform.py</code>, allowing for the flexible selection and combination of passes to suit specific requirements.
+
+Outlined below is our pipeline:
 
 <img src="imgs/overall_pipeline.png" width=800>
 
