@@ -30,7 +30,7 @@ Please refer to the file for default parameter values and to change them.
 
 Specifically, below are all the pruning methods that we've implemented:
 
-weight pruning:
+Weight pruning:
 
 <img src="imgs/weight_wise.png" width=500>
 
