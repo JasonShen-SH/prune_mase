@@ -15,19 +15,12 @@
 * Investigate the model's ability to train from scratch.
 * Examine the transferability of methodologies to alternative models (e.g., ResNet18) and datasets (e.g., colored-MNIST).
 
-
-
-Overall Pipeline
-
-Our project has developed a ”trainable” pruning method which could automatically prunes and compresses the network, while achieving comparable performance after training.
-
-The architecture of our framework is segmented into four key components: **Pruning, Quantization, Training, and Huffman Coding**。
-
-Each component is executed through an autonomous pass within <code>transform.py</code>, allowing for the flexible selection and combination of passes to suit specific requirements.
-
-Outlined below is our pipeline:
+## Overall Pipeline
 
 <img src="imgs/overall_pipeline.png" width=800>
+
+Each component within the pipeline is executed through an autonomous pass within <code>transform.py</code>, allowing for the **flexible** selection and combination of passes to suit specific requirements.
+
 
 &nbsp;&nbsp;
 
