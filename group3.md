@@ -1,3 +1,5 @@
+# Pruning and Training for MASE
+
 ## Overall Pipeline
 
 It mainly consists of four parts: **pruning, quantization, training, and Huffman Coding**. 
