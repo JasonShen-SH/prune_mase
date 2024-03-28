@@ -46,7 +46,7 @@ Activation pruning:
 
 Please refer to **pruning_methods.py** for their specifc names. 
 
-For the detailed analysis on their principles and performance, please refer to the report.
+For the detailed analysis on their principles and performance, as well as the multiple evaluating metrics, please refer to the report.
 
 &nbsp;&nbsp;
 
