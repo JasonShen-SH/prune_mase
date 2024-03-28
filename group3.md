@@ -1,6 +1,23 @@
 # Pruning and Training for MASE - Group 3 - Ruiqi Shen, Zhiyu Ma, Yann Bilien
 
-## Overall Pipeline
+# Functionality 
+## Basic Elements:
+* Implement a pruning pass that automatically prunes parameters for any given granularities
+* Add support so that pruned networks can be re-trained
+* Evaluate its performance and sparsity in terms of different design parameters
+
+## Extenstions:
+
+* Implement a comprehensive pipeline capable of autonomously pruning and compressing networks while preserving comparable performance post-training.
+
+  Our framework's structure is divided into four critical elements: **Pruning, Quantization, Training, and Huffman Coding**, achieving efficient sparsity encoding.
+* Execute a wide array of pruning methods, specifically, 9 of weight pruning (across different granularities), and 5 of activation pruning (focusing on neurons/feature maps and similarity-based approaches)
+* Investigate the model's ability to train from scratch.
+* Examine the transferability of methodologies to alternative models (e.g., ResNet18) and datasets (e.g., colored-MNIST).
+
+
+
+Overall Pipeline
 
 Our project has developed a ”trainable” pruning method which could automatically prunes and compresses the network, while achieving comparable performance after training.
 
@@ -143,6 +160,7 @@ dataset = "mnist"  # colored-MNIST
 
 ## Implementation Details:
 
+*abc 
 
 
 
