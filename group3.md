@@ -77,17 +77,17 @@ huffman used bytes:  1344395.25
 INFO     Transformation is completed
 ```
 
-| Metric                                     |Post-Reduction Size | Details                                                                         |
-|--------------------------------------------|--------------------|---------------------------------------------------------------------------------|
-| **Model Size Reduction**                   |                    |                                                                                 |
-| After Pruning                              | 80% (1 - 20%)      | Model size and Conv2d parameters reduced to 80% of original sizes.              |
-| After Post-Prune Quantization              | 20% (80% * 25%)    | Further reduced to a quarter of its original size with 8-bit storage.           |
-| After Huffman Encoding                     | 7.34% (20% * 36.7%)| Further reduced to 36.7% of its post-quantization size.                         |
-| **Conv2d Parameters & FLOPs Reduction**    |                    |                                                                                 |
-| Number of Conv2d Parameters (Pruning)      | 20%                | Precisely reduced to 20% of their original sizes.                               |
-| Number of Conv2d FLOPs (Pruning)           | >10%               | Reduction can far exceed 10%, due to zeroed weights.                            |
-| **Validation Accuracy**                    |                    |                                                                                 |
-| Post Fine-Tuning                           | 93.34%             | Slightly higher than the pre-trained model's 93.32% validation accuracy.        |
+| Metric                                     |Post-Reduction Size (compared to original)| Details                                                                         |
+|--------------------------------------------|------------------------------------------|---------------------------------------------------------------------------------|
+| **Model Size Reduction**                   |                                          |                                                                                 |
+| After Pruning                              | 80% (1 - 20%)                            | Model size and Conv2d parameters reduced to 80% of original sizes.              |
+| After Post-Prune Quantization              | 20% (80% * 25%)                          | Further reduced to a quarter of its original size with 8-bit storage.           |
+| After Huffman Encoding                     | 7.34% (20% * 36.7%)                      | Further reduced to 36.7% of its post-quantization size.                         |
+| **Conv2d Parameters & FLOPs Reduction**    |                                          |                                                                                 |
+| Number of Conv2d Parameters (Pruning)      | 20%                                      | Precisely reduced to 20% of their original sizes.                               |
+| Number of Conv2d FLOPs (Pruning)           | >10%                                     | Reduction can far exceed 10%, due to zeroed weights.                            |
+| **Validation Accuracy**                    |                                          |                                                                                 |
+| Post Fine-Tuning                           | 93.34%                                   | Slightly higher than the pre-trained model's 93.32% validation accuracy.        |
 
 
 In summary, it is evident that the model can maintain or even slightly improve its validation accuracy while undergoing significant model compression, achieving the desired outcome.
