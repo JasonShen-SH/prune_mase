@@ -10,7 +10,7 @@
 * Implement a comprehensive pipeline consisting of **Pruning, Quantization, Training, and Huffman Coding**, capable of autonomously pruning and compressing networks while preserving comparable performance post-training, achieving efficient sparsity encoding.
 * Execute a wide array of pruning methods, specifically, 9 of weight pruning (across different granularities), and 5 of activation pruning (focusing on neurons/feature maps and similarity-based approaches)
 * Investigate the model's ability to train from scratch.
-* Examine the transferability of methodologies to alternative models (e.g., ResNet18) and datasets (e.g., colored-MNIST).
+* Examine the transferability of methodologies to alternative models (ResNet18) and datasets (colored-MNIST).
 
 # Getting started
 
