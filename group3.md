@@ -46,7 +46,9 @@ Please refer to **pruning_methods.py** for their specifc names. For the detailed
 
 Additionally, inspired by the methodology from[DEEP COMPRESSION: COMPRESSING DEEP NEURAL NETWORKS WITH PRUNING, TRAINED QUANTIZATION AND HUFFMAN CODING](https://arxiv.org/pdf/1510.00149.pdf), we've implemented **post-prune quantization** and **Huffman Encoding & Decoding**. 
 
-By default, these two further model compression techniques are enabled, but you can choose to disable them in the config.
+By default, these two further model compression techniques are enabled, but you can choose to disable them by commenting <code>passes.quantize</code> and set <code>is_huffman = false</code>
+
+Note that quantization must be valid for Huffman encoding.
 
 &nbsp;&nbsp;
 
