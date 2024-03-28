@@ -13,6 +13,8 @@
 * Investigate the model's ability to train from scratch.
 * Examine the transferability of methodologies to alternative models (e.g., ResNet18) and datasets (e.g., colored-MNIST).
 
+# Implementation Details
+
 ## Overall Pipeline
 
 <img src="imgs/overall_pipeline.png" width=800>
