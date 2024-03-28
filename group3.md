@@ -95,6 +95,16 @@ In summary, it is evident that the model can maintain or even slightly improve i
 Note: Actual model size reduction on hardware requires compiler-level modifications. Theoretical strategies still signify a major advancement, with potential drastic reductions upon compiler adjustments. Please refer to the detailed discussion in the report.
 
 
+## Model Storage
+
+Note that we save the model after prune, quantization, and train.
+
+If you run the test, find the saved models at:
+<code>mase_output/group3_test</code>
+
+Or if you run the transform command, find the saved models at:
+<code>mase_output/{project}/software/transforms</code>
+
 
 # Implementation Overview
 
@@ -153,7 +163,7 @@ The post-prune quantization convert the 32-bit float data into an 8-bit format w
 Huffman Encoding takes the advantage of the newly quantized data, it uses variable-length encoding to encode more common weight values with shorter bits,
 effectively compressing the model further.
 
-By default, these two further model compression techniques are enabled, but you can choose to disable them by commenting <code>passes.quantize</code> and set <code>is_huffman = false</code>
+By default, these two further model compression techniques are enabled, but you can choose to disable them by commenting all <code>passes.quantize</code> and set <code>is_huffman = false</code>
 
 Note that quantization must be valid for Huffman encoding.
 
@@ -172,15 +182,6 @@ dataset = "mnist"  # colored-MNIST
 ```
 
 &nbsp;&nbsp;
-
-
-Note that we save the model after prune, quantization, and train.
-
-If you run the test, find the saved models at:
-<code>mase_output/group3_test</code>
-
-Or if you run the transform command, find the saved models at:
-<code>mase_output/{project}/software/transforms</code>
 
 
 ## Contact
