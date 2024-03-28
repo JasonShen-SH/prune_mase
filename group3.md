@@ -75,15 +75,16 @@ huffman used bytes:  1344395.25
 INFO     Transformation is completed
 ```
 
-Following pruning, the <code>model size</code> and the <code>number of Conv2d parameters</code> are precisely reduced to <code>20%</code> of their original sizes, while the reduction in the <code>number of Conv2d FLOPs</code> can even far exceed 10%. This is attributed to the fact that setting weights to zero results in more zeroed activation outputs per layer, sometimes exceed the sparsity.
+| Metric                               | Reduction | Details                                                       |
+|--------------------------------------|-----------|---------------------------------------------------------------|
+| Model Size (Pruning)                 | 20%       | After pruning, model size and Conv2d parameters reduced.      |
+| Number of Conv2d Parameters (Pruning)| 20%       | Precisely reduced to 20% of their original sizes.             |
+| Number of Conv2d FLOPs (Pruning)     | >10%      | Reduction can far exceed 10%, due to zeroed weights.          |
+| Model Size (Post-Quantization)       | 25%       | Reduced to a quarter of its original size with 8-bit storage. |
+| Model Size (Post-Huffman Coding)     | 36.7%     | Further reduced to 36.7% of its size post-quantization.       |
+| Validation Accuracy                  | 93.34%    | Slightly higher than the pre-trained model's 93.32%.         |
 
-Furthermore, Post-prune Quantization meticulously reduces the model size to a quarter of its original size, as each parameter is stored using 8 bits instead of the initial 32 bits (float32) 
-
-Subsequently, after Huffman Coding, the model size can be further reduced to 36.7% of its size post-quantization, achieving significant model compression.
-
-Simultaneously, the model can reach a validation accuracy of 93.34% after 10 rounds of fine-tuning, which is slightly higher than the 93.32% validation accuracy of the pre-trained model. Thus, pruning can maintain performance while significantly compressing the model.
-
-(Note: Actual model size reduction on hardware necessitates compiler-level changes, these strategies are calculated theoretically and still mark a significant step forward as model could be drastically reduced once compiler is adjusted accordingly. Please refer to the report for detailed discussion)
+**Note**: Actual model size reduction on hardware requires compiler-level modifications. Theoretical strategies still signify a major advancement, with potential drastic reductions upon compiler adjustments. Please refer to the detailed discussion in the report.
 
 
 &nbsp;&nbsp;
