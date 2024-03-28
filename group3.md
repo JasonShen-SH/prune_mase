@@ -12,7 +12,7 @@ The following is our pipeline:
 
 ## Getting started with the experiments
 
-Please execute all of our programs in the **machop(i.e."mase/machop")** directory.
+Please execute all of our programs in the **machop("mase/machop")** directory.
 
 Our test function is **"test_group3.py"** inside the existing testing framework, run in command line using:
 ```yaml
