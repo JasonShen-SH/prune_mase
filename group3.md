@@ -10,8 +10,9 @@ The following is our pipeline:
 
 &nbsp;&nbsp;
 
-Please execute all of our programs in the **machop(i.e."mase/machop")** directory.
+## Getting started with the experiments
 
+Please execute all of our programs in the **machop(i.e."mase/machop")** directory.
 
 Our test function is **"test_group3.py"** inside the existing testing framework, run in command line using:
 ```yaml
@@ -28,6 +29,8 @@ Please refer to the file for default parameter values and to change them.
 
 &nbsp;&nbsp;
 
+## Pruning Methods
+
 Specifically, below are all the pruning methods that we've implemented:
 
 Weight pruning:
@@ -41,16 +44,19 @@ Activation pruning:
 
 Please refer to **pruning_methods.py** for their specifc names. For the detailed analysis on their principles and performance, please refer to the report.
 
-
 &nbsp;&nbsp;
 
-Additionally, inspired by the methodology from[DEEP COMPRESSION: COMPRESSING DEEP NEURAL NETWORKS WITH PRUNING, TRAINED QUANTIZATION AND HUFFMAN CODING](https://arxiv.org/pdf/1510.00149.pdf), we've implemented **post-prune quantization** and **Huffman Encoding & Decoding**. 
+## Post-prune Quantization & Huffman Coding
+
+Additionally, inspired by the methodology from[DEEP COMPRESSION: COMPRESSING DEEP NEURAL NETWORKS WITH PRUNING, TRAINED QUANTIZATION AND HUFFMAN CODING](https://arxiv.org/pdf/1510.00149.pdf), we've implemented **post-prune quantization** and **Huffman Coding**. 
 
 By default, these two further model compression techniques are enabled, but you can choose to disable them by commenting <code>passes.quantize</code> and set <code>is_huffman = false</code>
 
 Note that quantization must be valid for Huffman encoding.
 
 &nbsp;&nbsp;
+
+## Train from scratch && Transferability to other models and datasets
 
 By default, the model loads the **pre-trained VGG7 model** for pruning and training.
 
@@ -63,6 +69,8 @@ dataset = "mnist"  # colored-MNIST
 ```
 
 &nbsp;&nbsp;
+
+## Contact
 
 Feel free to contact us at ruiqi.shen23@imperial.ac.uk if you have any encountered problems.
 
