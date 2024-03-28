@@ -174,7 +174,13 @@ dataset = "mnist"  # colored-MNIST
 &nbsp;&nbsp;
 
 
-Note that we save the model after each pass (prune, quantization, train, 
+Note that we save the model after prune, quantization, and train.
+
+If you run the test, find the saved models at:
+<code>mase_output/group3_test</code>
+
+Or if you run the transform command, find the saved models at:
+<code>mase_output/{project}/software/transforms</code>
 
 
 ## Contact
