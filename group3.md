@@ -20,18 +20,37 @@ You can also execute the transform function via the command line using
 ./ch transform --config configs/examples/vgg_cifar10_prune_retrain.toml
 ```
 
-You might change configuration as you wish. As there are too many configurations, we kept them inside toml file at "configs/example/prune_retrain_group3.toml". 
-Please refer to the file for the default parameter values.
+You might change configuration as you wish. As there are too many configurations, we kept them inside toml file at <code>configs/example/prune_retrain_group3.toml"</code>
+Please refer to the file for the default parameter values and to change them.
 
-Specifically, below are all the pruning methods that you could choose from:
+Specifically, below are all the pruning methods that we've implemented:
 
 weight pruning:
 
 <img src="imgs/weight_wise.png" width=600>
 
+
 Activation pruning:
 
 <img src="imgs/activation_pruning.png" width=600>
+
+Please refer to **pruning_methods.py** for their specifc names. For the detailed analysis on their principles and performance, please refer to the report.
+
+
+
+Additionally, inspired by the methodology from[DEEP COMPRESSION: COMPRESSING DEEP NEURAL NETWORKS WITH PRUNING, TRAINED QUANTIZATION AND HUFFMAN CODING](https://arxiv.org/pdf/1510.00149.pdf), we've implemented **post-prune quantization** and **Huffman Encoding & Decoding**. 
+
+By default, these two further model compression techniques are enabled, but you can choose to disable them in the config.
+
+
+
+By default, the model loads the pre-trained VGG7 model for pruning and training. If desired, you can opt to train from scratch by setting <code>load_name = None</code>.
+
+Moreover, you are free to select different datasets and models. The ResNet18 network and colored-MNIST are fully compatible with our pipeline and yield satisfactory results. To utilize these, please modify the toml configuration as follows:
+```yaml
+model = "resnet18"  # ResNet18
+dataset = "mnist"  # colored-MNIST
+```
 
 
 
