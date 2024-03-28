@@ -24,7 +24,9 @@ You can also execute the transform function via the command line using
 ./ch transform --config configs/examples/vgg_cifar10_prune_retrain.toml
 ```
 
-You might change configuration as you wish. As there are too many configurations, we kept them inside toml file at <code>configs/example/prune_retrain_group3.toml</code>
+You might change configuration as you wish. 
+
+As there are too many configurations, we kept them inside toml file at <code>configs/example/prune_retrain_group3.toml</code>
 Please refer to the file for default parameter values and to change them.
 
 &nbsp;&nbsp;
@@ -42,7 +44,9 @@ Activation pruning:
 
 <img src="imgs/activation_pruning.png" width=500>
 
-Please refer to **pruning_methods.py** for their specifc names. For the detailed analysis on their principles and performance, please refer to the report.
+Please refer to **pruning_methods.py** for their specifc names. 
+
+For the detailed analysis on their principles and performance, please refer to the report.
 
 &nbsp;&nbsp;
 
