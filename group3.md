@@ -33,6 +33,8 @@ You might change configuration as you wish.
 As there are too many configurations, we kept them inside a toml file at <code>configs/example/prune_retrain_group3.toml</code>
 Please refer to the file for default parameter values and to change them.
 
+## Example output
+
 Below is a demonstration of an actual output under certain pruning prerequisites:
 ```yaml
 # Pruning:
@@ -80,16 +82,17 @@ INFO     Transformation is completed
 | **Model Size Reduction**                   |                    |                                                                                 |
 | After Pruning                              | 80% (1 - 20%)      | Model size and Conv2d parameters reduced to 80% of original sizes.              |
 | After Post-Prune Quantization              | 20% (80% * 25%)    | Further reduced to a quarter of its original size with 8-bit storage.           |
-| After Huffman Coding                       | 7.34% (20% * 36.7%)| Further reduced to 36.7% of its post-quantization size.                         |
+| After Huffman Encoding                     | 7.34% (20% * 36.7%)| Further reduced to 36.7% of its post-quantization size.                         |
 | **Conv2d Parameters & FLOPs Reduction**    |                    |                                                                                 |
 | Number of Conv2d Parameters (Pruning)      | 20%                | Precisely reduced to 20% of their original sizes.                               |
 | Number of Conv2d FLOPs (Pruning)           | >10%               | Reduction can far exceed 10%, due to zeroed weights.                            |
 | **Validation Accuracy**                    |                    |                                                                                 |
 | Post Fine-Tuning                           | 93.34%             | Slightly higher than the pre-trained model's 93.32% validation accuracy.        |
 
+
 In summary, it is evident that the model can maintain or even slightly improve its validation accuracy while undergoing significant model compression, achieving the desired outcome.
 
-**Note**: Actual model size reduction on hardware requires compiler-level modifications. Theoretical strategies still signify a major advancement, with potential drastic reductions upon compiler adjustments. Please refer to the detailed discussion in the report.
+Note: Actual model size reduction on hardware requires compiler-level modifications. Theoretical strategies still signify a major advancement, with potential drastic reductions upon compiler adjustments. Please refer to the detailed discussion in the report.
 
 
 &nbsp;&nbsp;
