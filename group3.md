@@ -7,24 +7,14 @@
 * Evaluate its performance and sparsity in terms of different design parameters
 
 ## Extenstions:
-
 * Implement a comprehensive pipeline consisting of **Pruning, Quantization, Training, and Huffman Coding**, capable of autonomously pruning and compressing networks while preserving comparable performance post-training, achieving efficient sparsity encoding.
 * Execute a wide array of pruning methods, specifically, 9 of weight pruning (across different granularities), and 5 of activation pruning (focusing on neurons/feature maps and similarity-based approaches)
 * Investigate the model's ability to train from scratch.
 * Examine the transferability of methodologies to alternative models (e.g., ResNet18) and datasets (e.g., colored-MNIST).
 
-# Implementation Details
+# Getting started
 
-## Overall Pipeline
-
-<img src="imgs/overall_pipeline.png" width=800>
-
-Each component within the pipeline is executed through an autonomous pass within <code>transform.py</code>, allowing for the **flexible** selection and combination of passes to suit specific requirements.
-
-
-&nbsp;&nbsp;
-
-## Getting started with the experiments
+## How to run
 
 Please execute all of our programs in the <code>machop("mase/machop")</code> directory.
 
@@ -105,6 +95,15 @@ In summary, it is evident that the model can maintain or even slightly improve i
 Note: Actual model size reduction on hardware requires compiler-level modifications. Theoretical strategies still signify a major advancement, with potential drastic reductions upon compiler adjustments. Please refer to the detailed discussion in the report.
 
 
+
+# Implementation Details
+
+## Overall Pipeline
+
+<img src="imgs/overall_pipeline.png" width=800>
+
+Each component within the pipeline is executed through an autonomous pass within <code>transform.py</code>, allowing for the **flexible** selection and combination of passes to suit specific requirements.
+
 &nbsp;&nbsp;
 
 ## Pruning Methods
@@ -149,11 +148,6 @@ dataset = "mnist"  # colored-MNIST
 ```
 
 &nbsp;&nbsp;
-
-
-## Implementation Details:
-
-*abc 
 
 
 
