@@ -16,9 +16,9 @@ Outlined below is our pipeline:
 
 ## Getting started with the experiments
 
-Please execute all of our programs in the **machop("mase/machop")** directory.
+Please execute all of our programs in the <code>machop("mase/machop")</code> directory.
 
-Our test function is **"test_group3.py"** inside the existing testing framework, run in command line using:
+Our test function is <code>test_group3.py</code> inside the existing testing framework, run in command line using:
 ```yaml
 python test/passes/graph/transforms/prune/test_group3.py
 ```
@@ -66,9 +66,11 @@ INFO     model is successfully quantized and saved
 # Fine-tuning:
 INFO     Loaded pytorch checkpoint from ../mase_output/vgg_cifar10_prune/software/transforms/prune/state_dict.pt
 Epoch 0:   1%|▍                                              | 1/98 [00:27<44:02,  0.04it/s, v_num=0, train_acc_step=0.885]
+# continue to train ......
 
 # Huffman coding
 huffman used bytes:  1344395.25
+
 INFO     Transformation is completed
 ```
 
@@ -88,7 +90,7 @@ Activation pruning:
 
 <img src="imgs/activation_pruning.png" width=500>
 
-Please refer to **pruning_methods.py** for their specifc names. 
+Please refer to <code>pruning_methods.py</code> for their specifc names. 
 
 For the detailed analysis on their principles and performance, as well as the multiple evaluating metrics, please refer to the report.
 
